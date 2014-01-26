@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/ptomulik/puppet-macro/badge.png)](https://coveralls.io/r/ptomulik/puppet-macro)
 [![Code Climate](https://codeclimate.com/github/ptomulik/puppet-macro.png)](https://codeclimate.com/github/ptomulik/puppet-macro)
 
-####Table of Contents
+####<a id="table-of-contents"></a>Table of Contents
 
 1. [Overview](#overview)
 2. [Module Description](#module-description)
@@ -18,11 +18,15 @@
    * [Example 7: Using variables](#example-7-using-variables)
    * [Example 8: Building dependencies between parameters](#example-8-building-dependencies-between-parameters)
 4. [Reference](#reference)
+   * [Function Reference](#function-reference)
+   * [API Reference](#api-reference)
 5. [Limitations](#limitations)
 
 ##<a id="overview"></a>Overview
 
 Puppet parser macros.
+
+|[Table of Contents](#table-of-contents)|
 
 ##<a id="module-description"></a>Module Description
 
@@ -36,6 +40,8 @@ parameters.
 
 The main reason for this module being developed is exemplified in
 [Example 8](#example-8-building-dependencies-between-parameters).
+
+|[Table of Contents](#table-of-contents)|
 
 ##<a id="usage"></a>Usage
 
@@ -53,6 +59,8 @@ end
 
 The above macro simply returns the `'macro foo::bar'` string.
 
+|[Table of Contents](#table-of-contents)|
+
 ###<a id="example-2-invoking-macro-in-puppet-manifest"></a>Example 2: invoking macro in puppet-manifest
 
 Nothing simpler that:
@@ -68,6 +76,8 @@ a statement:
 ```puppet
 invoke('foo::bar')
 ```
+
+|[Table of Contents](#table-of-contents)|
 
 ###<a id="example-3-macro-with-parameters"></a>Example 3: macro with parameters
 
@@ -86,6 +96,8 @@ Now you may use it with:
 $sum = determine('sum', 1, 2)
 notify { sum: message => "determine('sum',1,2) -> ${sum}" }
 ```
+
+|[Table of Contents](#table-of-contents)|
 
 ###<a id="example-4-variable-number-of-parameters"></a>Example 4: Variable number of parameters
 
@@ -108,6 +120,8 @@ notify { zero: message => "determine('sum') -> ${zero}" }
 notify { one: message => "determine('sum',1) -> ${one}" }
 notify { three: message => "determine('sum',1,2) -> ${three}" }
 ```
+
+|[Table of Contents](#table-of-contents)|
 
 ###<a id="example-5-default-parameters"></a>Example 5: Default parameters
 
@@ -135,6 +149,8 @@ $content = determine('puppet::config::content','/usr/local/etc/puppet/puppet.con
 notify { content: message => $content }
 ```
 
+|[Table of Contents](#table-of-contents)|
+
 ###<a id="example-6-invoking-macro-from-macro"></a>Example 6: Invoking macro from macro
 
 ```ruby
@@ -158,6 +174,8 @@ Notice: determine('bar') -> macro foo::bar
 that is the result of macro `foo::bar` defined in
 [Example 1](#example-1-defining-macro-in-ruby-code).
 
+|[Table of Contents](#table-of-contents)|
+
 ###<a id="example-7-using-variables"></a>Example 7: Using variables
 
 You may access puppet variables, for example `$::osfamily` fact.  The following
@@ -180,6 +198,8 @@ end
 $apache_conf_dir = determine('apache::conf_dir')
 notify { apache_conf_dir: message => "determine('apache::conf_dir') -> ${apache_conf_dir}" }
 ```
+
+|[Table of Contents](#table-of-contents)|
 
 ###<a id="example-8-building-dependencies-between-parameters"></a>Example 8: Building dependencies between parameters
 
@@ -240,7 +260,71 @@ Notice: custom_a_and_b: a='custom a', b='custom b'
 Notice: other: a='other default a', b='default b for a="other default a"'
 ```
 
+|[Table of Contents](#table-of-contents)|
+
 ##<a id="reference"></a>Reference
+
+###<a id="function-reference"></a>Function reference
+
+####<a id="index-of-functions"></a>Index of functions:
+
+* [determine](#determine)
+* [invoke](#invoke)
+
+####<a id="determine"></a>determine
+Determine value of a macro.
+
+This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
+method and returns it's value. The function takes macro name as first
+argument and macro parameters as the rest of arguments. The number of
+arguments provided by user is validated against the macro's arity.
+
+*Example*:
+
+Let say, you have defined the following macro in
+*puppet/parser/macros/sum.rb*:
+
+    # puppet/parser/macros/sum.rb
+    Puppet::Parser::Macros.newmacro 'sum' do |x,y|
+      Integer(x) + Integer(y)
+    end
+
+You may then invoke the macro from puppet as follows:
+
+    $three = determine('sum',1,2) # -> 3
+
+- *Type*: rvalue
+
+|[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)|
+
+####<a id="invoke"></a>invoke
+Invoke macro as a statement.
+
+This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
+method and returns nil (that is it doesn't return any value to puppet).
+The function takes macro name as first argument and macro parameters as the
+rest of arguments. The number of arguments provided by user is validated
+against the macro's arity.
+
+*Example*:
+
+Let say, you have defined the following macro in
+*puppet/parser/macros/print.rb*:
+
+    # puppet/parser/macros/print.rb
+    Puppet::Parser::Macros.newmacro 'print' do |msg|
+      print msg
+    end
+
+You may then invoke the macro from puppet as follows:
+
+    invoke('print',"hello world!\n")
+
+- *Type*: statement
+
+|[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)|
+
+###<a id="api-reference"></a>API Reference
 
 API reference may be generated with
 
@@ -250,6 +334,8 @@ bundle exec rake yard
 
 The generated documentation goes to `doc/` directory. Note that this works only
 under ruby >= 1.9.
+
+|[Table of Contents](#table-of-contents)|
 
 ##Limitations
 
@@ -261,3 +347,5 @@ under ruby >= 1.9.
 * Currently there is no way to store and auto-generate documentation for macros.
   It should work similarly as for functions but its not implemented at the
   moment. This may be added in future versions.
+
+|[Table of Contents](#table-of-contents)|
