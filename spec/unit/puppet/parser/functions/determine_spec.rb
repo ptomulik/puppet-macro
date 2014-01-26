@@ -5,9 +5,10 @@ require 'puppet/util/package' # versioncmp
 
 describe "determine function" do
   let(:scope) { PuppetlabsSpec::PuppetInternals.scope }
-  it "should exist" do
-    Puppet::Parser::Functions.function("determine").should == "function_determine"
-  end
+  let(:function) { Puppet::Parser::Functions.function(:determine) }
+  before { function }
+  it("should exist"){ function.should == "function_determine" }
+  it("should be an :rvalue") { Puppet::Parser::Functions.rvalue?(:determine).should be_true }
 
   [['foo'],['foo',:arg1],['foo',:arg1,:arg2]].each do |args|
     args_str = "#{args.map{|x| x.intern}.join(', ')}"

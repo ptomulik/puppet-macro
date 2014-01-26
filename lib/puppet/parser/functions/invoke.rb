@@ -30,6 +30,5 @@ module Puppet::Parser::Functions
     rescue Puppet::ParseError => err
       raise $!, "invoke(): #{$!}", $!.backtrace
     end
-    nil
   end
 end

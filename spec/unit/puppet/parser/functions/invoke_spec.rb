@@ -5,16 +5,16 @@ require 'puppet/util/package' # versioncmp
 
 describe "invoke function" do
   let(:scope) { PuppetlabsSpec::PuppetInternals.scope }
-  it "should exist" do
-    Puppet::Parser::Functions.function("invoke").should == "function_invoke"
-  end
+  let(:function) { Puppet::Parser::Functions.function(:invoke) }
+  it("should exist") { function.should == "function_invoke" }
+  it("should be a :statement") { Puppet::Parser::Functions.rvalue?(:invoke).should be_false }
 
   [['foo'],['foo',:arg1],['foo',:arg1,:arg2]].each do |args|
     args_str = "#{args.map{|x| x.intern}.join(', ')}"
     context "invoke(#{args_str})" do
       let(:args_str) { args_str }
-      before { Puppet::Parser::Macros.stubs(:call_macro).once.with(scope,args).returns :not_ok }
-      it { scope.function_invoke(args).should be_nil }
+      before { Puppet::Parser::Macros.stubs(:call_macro).once.with(scope,args).returns :ok }
+      it { scope.function_invoke(args).should be :ok }
     end
   end
   context "when Puppet::Parser::Macros.call_macro raises Puppet::ParseError" do
