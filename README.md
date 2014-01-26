@@ -216,13 +216,14 @@ define mymodule::foo($a = undef, $b = undef)
 Now, if we run the following command:
 
 ```console
-puppet apply --modulepath $(pwd)
+puppet apply --modulepath $(pwd) <<!
 mymodule::foo {defaults: }
 mymodule::foo {custom_a: a => 'custom a' }
 mymodule::foo {custom_b: b => 'custom b' }
 mymodule::foo {custom_a_and_b: a => 'custom a', b => 'custom b' }
 mymodule::foo {other: }
 Mymodule::Foo[other] { a => 'other default a' }
+!
 ```
 
 we shall see these lines at output:
