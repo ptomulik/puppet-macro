@@ -143,7 +143,7 @@ example:
 ```ruby
 # mymodule/lib/puppet/parser/macros/bar.rb
 Puppet::Parser::Macros.newmacro 'bar' do
-  function_determine('foo::bar')
+  function_determine(['foo::bar'])
 end
 ```
 
