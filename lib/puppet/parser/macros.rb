@@ -93,7 +93,7 @@ module Puppet::Parser::Macros
     # @param block [Proc] macro definition
     #
     # @option options environment [Puppet::Node::Environment] an environment
-    #   this macro belongs to, defautls to {default_environment}
+    #   this macro belongs to, defautls to `default_environment`
     def newmacro(name,options={},&block)
       env = options[:environment] || default_environment
       Puppet.debug "overwritting macro #{name}" if macro(name,env,false)
