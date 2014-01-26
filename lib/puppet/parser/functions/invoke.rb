@@ -28,7 +28,7 @@ module Puppet::Parser::Functions
     begin
       Puppet::Parser::Macros.call_macro(self,args)
     rescue Puppet::ParseError => err
-      raise $!, "invoke(): #{$!}", $!.backtrace
+      raise Puppet::ParseError, "invoke(): #{err.message}", err.backtrace
     end
   end
 end
