@@ -32,9 +32,9 @@ them in manifests. This works similarly to parser
 implementing a macro is a little bit easier. Also, macros may use
 "hierarchical" names in `foo::bar::geez` form, so a module developer may easily
 establish one-to-one correspondence between macro names and class/define
-parameters. 
+parameters.
 
-The main reason for what this module was developed is exemplified in
+The main reason for this module being developed is exemplified in
 [Example 8](#example-8-building-dependencies-between-parameters).
 
 ##<a id="usage"></a>Usage
@@ -137,9 +137,6 @@ notify { content: message => $content }
 
 ###<a id="example-6-invoking-macro-from-macro"></a>Example 6: Invoking macro from macro
 
-For this we have special convenience methods `determine` and `invoke`, for
-example:
-
 ```ruby
 # mymodule/lib/puppet/parser/macros/bar.rb
 Puppet::Parser::Macros.newmacro 'bar' do
@@ -195,7 +192,6 @@ end
 ```
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/foo/b.rb
 # mymodule/lib/puppet/parser/macros/foo/b.rb
 Puppet::Parser::Macros.newmacro 'foo::b' do |a|
   a = function_determine(['foo::a']) if not a or a.empty? or a.equal? :undef
