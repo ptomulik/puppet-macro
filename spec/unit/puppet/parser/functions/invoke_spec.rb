@@ -17,4 +17,13 @@ describe "invoke function" do
       it { scope.function_invoke(args).should be_nil }
     end
   end
+  context "when Puppet::Parser::Macros.call_macro raises Puppet::ParseError" do
+    context "invoke(['foo'])" do
+      let(:msg) { 'blah blah' }
+      it do
+        Puppet::Parser::Macros.stubs(:call_macro).once.with(scope,['foo']).raises Puppet::ParseError, msg
+        expect { scope.function_invoke(['foo']) }.to raise_error Puppet::ParseError, "invoke(): #{msg}"
+      end
+    end
+  end
 end

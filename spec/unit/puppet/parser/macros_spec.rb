@@ -74,6 +74,56 @@ describe Puppet::Parser::Macros do
     end
   end
 
+  describe 'newmacro' do
+    let(:hash) { Hash.new }
+    let(:block) { lambda {} }
+    context 'when macro "foo" does not exist' do
+      before do
+        Puppet.expects(:debug).never
+        described_class.expects(:validate_name).once.with("foo")
+      end
+      context 'newmacro("foo") {}' do
+        before do
+          described_class.stubs(:default_environment).with().returns :env0
+          described_class.stubs(:macro).once.with("foo",:env0,false).returns nil
+          described_class.expects(:macros).with(:env0).returns hash
+        end
+        it 'should assign macros(:env0)["foo"] = block' do
+          hash["foo"].should be_nil
+          described_class.newmacro("foo",&block)
+          hash["foo"].should be block
+        end
+      end
+      context 'newmacro("foo",{:environment => :env1}) {}' do
+        before do
+          described_class.stubs(:default_environment).never
+          described_class.stubs(:macro).once.with("foo",:env1,false).returns nil
+          described_class.expects(:macros).with(:env1).returns hash
+        end
+        it 'should assign macros(:env1)["foo"] = block' do
+          hash["foo"].should be_nil
+          described_class.newmacro("foo",{:environment => :env1},&block)
+          hash["foo"].should be block
+        end
+      end
+    end
+    context 'when macro "foo" exists' do
+      context 'newmacro("foo") {}' do
+        before do
+          Puppet.expects(:debug).once.with("overwritting macro foo")
+          described_class.stubs(:default_environment).with().returns :env0
+          described_class.stubs(:macro).once.with("foo",:env0,false).returns lambda{|x|}
+          described_class.expects(:macros).with(:env0).returns hash
+        end
+        it 'should assign macros(:env1)["foo"] = block' do
+          hash["foo"].should be_nil
+          described_class.newmacro("foo",&block)
+          hash["foo"].should be block
+        end
+      end
+    end
+  end
+
   describe 'macros' do
     context 'without arguments' do
       before { described_class.stubs(:default_environment).with().returns :env0 }

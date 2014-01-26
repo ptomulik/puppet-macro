@@ -1,4 +1,5 @@
 2014-01-25 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * added specs to better cover newmacro, determine and invoke functions
   * release 0.0.1
   * corrected Example 6 in README.md
   * initial commit
