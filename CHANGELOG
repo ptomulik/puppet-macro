@@ -1,4 +1,5 @@
 2014-01-26 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * added few "integration" tests
   * included puppet 3.3 and 3.4 on travis
   * included puppet 2.7 on travis
   * optimized 'invoke' function for better code coverage

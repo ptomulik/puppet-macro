@@ -1,3 +1,4 @@
+require 'puppet'
 require 'puppet/util/autoload'
 
 module Puppet::Parser::Macros

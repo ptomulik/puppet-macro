@@ -2,9 +2,10 @@
 Gemfile.lock
 vendor
 pkg
-spec/fixtures/modules
-spec/fixtures/manifests
 spec/lib
+spec/fixtures/manifests/
+spec/fixtures/modules/*
+!spec/fixtures/modules/testmodule
 .rspec_system
 .bundle
 # Editor junk

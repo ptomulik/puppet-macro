@@ -26,7 +26,7 @@
 
 Puppet parser macros.
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ##<a id="module-description"></a>Module Description
 
@@ -41,17 +41,17 @@ parameters.
 The main reason for this module being developed is exemplified in
 [Example 8](#example-8-building-dependencies-between-parameters).
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ##<a id="usage"></a>Usage
 
 ###<a id="example-1-defining-macro-in-ruby-code"></a>Example 1: Defining macro in ruby code
 
-To define a macro named **foo::bar** in a module **mymodule** write a file
-named *mymodule/lib/puppet/parser/macros/foo/bar.rb*:
+To define a macro named **foo::bar** in a module write a file
+named *lib/puppet/parser/macros/foo/bar.rb*:
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/foo/bar.rb
+# lib/puppet/parser/macros/foo/bar.rb
 Puppet::Parser::Macros.newmacro 'foo::bar' do
   'macro foo::bar'
 end
@@ -59,7 +59,7 @@ end
 
 The above macro simply returns the `'macro foo::bar'` string.
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-2-invoking-macro-in-puppet-manifest"></a>Example 2: invoking macro in puppet-manifest
 
@@ -77,15 +77,15 @@ a statement:
 invoke('foo::bar')
 ```
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-3-macro-with-parameters"></a>Example 3: macro with parameters
 
 Let's define macro `sum` which adds two integers:
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/sum.rb
-Puppet::Parser::Macros.newmacro 'sum' do |x,y|
+# lib/puppet/parser/macros/sum2.rb
+Puppet::Parser::Macros.newmacro 'sum2' do |x,y|
   Integer(x) + Integer(y)
 end
 ```
@@ -93,21 +93,31 @@ end
 Now you may use it with:
 
 ```puppet
-$sum = determine('sum', 1, 2)
-notify { sum: message => "determine('sum',1,2) -> ${sum}" }
+$sum = determine('sum2', 1, 2)
+notify { sum: message => "determine('sum2',1,2) -> ${sum}" }
 ```
 
-|[Table of Contents](#table-of-contents)|
+You may use **lambda** instead of a `do`..`end` block to enable strict arity
+checking, for example:
+
+```ruby
+# lib/puppet/parser/macros/sum2.rb
+Puppet::Parser::Macros.newmacro 'sum2', &lambda { |x,y|
+  Integer(x) + Integer(y)
+}
+```
+
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-4-variable-number-of-parameters"></a>Example 4: Variable number of parameters
 
 Let's redefine our `sum` from [Example 3](#example-3-macro-with-parameters) to accept arbitrary number of parameters:
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/sum.rb
-Puppet::Parser::Macros.newmacro 'sum' do |*args|
+# lib/puppet/parser/macros/sum.rb
+Puppet::Parser::Macros.newmacro 'sum', &lambda { |*args|
   args.map{|x| Integer(x)}.reduce(0,:+)
-end
+}
 ```
 
 Now you may use it with:
@@ -121,7 +131,7 @@ notify { one: message => "determine('sum',1) -> ${one}" }
 notify { three: message => "determine('sum',1,2) -> ${three}" }
 ```
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-5-default-parameters"></a>Example 5: Default parameters
 
@@ -129,39 +139,49 @@ Default parameters work only with ruby **1.9+**. If you don't care about
 compatibility with ruby **1.8**, you may define a macro with default parameters
 in the usual way:
 ```ruby
-# mymodule/lib/puppet/parser/macros/puppet/config/content.rb
-Puppet::Parser::Macros.newmacro 'puppet::config::content' do |file='/etc/puppet/puppet.conf'|
+# lib/puppet/parser/macros/puppet/config/content.rb
+Puppet::Parser::Macros.newmacro 'puppet::config::content', &lambda {|file='/etc/puppet/puppet.conf'|
   File.read(file)
-end
+}
 ```
 
 Now you may use it with:
-
 ```puppet
 $content = determine('puppet::config::content')
 notify { content: message => $content }
 ```
-
 or
-
 ```puppet
 $content = determine('puppet::config::content','/usr/local/etc/puppet/puppet.conf')
 notify { content: message => $content }
 ```
 
-|[Table of Contents](#table-of-contents)|
+If you need the same for ruby *1.8*, here is a workaround (note that the
+calling function, that is [determine](#determine), will check the
+minimum arity, so we only check the maximum):
+
+```ruby
+# lib/puppet/parser/macros/puppet/config/content.rb
+Puppet::Parser::Macros.newmacro 'puppet::config::content', &lambda {|*args|
+  if args.size > 1
+    raise Puppet::ParseError, "Wrong number of arguments (#{args.size+1} for maximum 2)"
+  end
+  args << '/etc/puppet/puppet.conf' if args.size < 1
+  File.read(args[0])
+}
+```
+
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-6-invoking-macro-from-macro"></a>Example 6: Invoking macro from macro
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/bar.rb
-Puppet::Parser::Macros.newmacro 'bar' do
+# lib/puppet/parser/macros/bar.rb
+Puppet::Parser::Macros.newmacro 'bar', &lambda {
   function_determine(['foo::bar'])
-end
+}
 ```
-
 then in puppet
-
 ```puppet
 $bar = determine('bar')
 notify { bar: message => "determine('bar') -> ${bar}" }
@@ -174,7 +194,7 @@ Notice: determine('bar') -> macro foo::bar
 that is the result of macro `foo::bar` defined in
 [Example 1](#example-1-defining-macro-in-ruby-code).
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-7-using-variables"></a>Example 7: Using variables
 
@@ -183,15 +203,15 @@ example determines default location of apache configs for operating system
 running on slave:
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/apache/conf_dir.rb
-Puppet::Parser::Macros.newmacro 'apache::conf_dir' do
+# lib/puppet/parser/macros/apache/conf_dir.rb
+Puppet::Parser::Macros.newmacro 'apache::conf_dir', &lambda {
   case os = lookupvar("::osfamily")
   when /FreeBSD/; '/usr/local/etc/apache22'
   when /Debian/; '/usr/etc/apache2'
   else
     raise Puppet::Error, "unsupported osfamily #{os.inspect}"
   end
-end
+}
 ```
 
 ```puppet
@@ -199,59 +219,63 @@ $apache_conf_dir = determine('apache::conf_dir')
 notify { apache_conf_dir: message => "determine('apache::conf_dir') -> ${apache_conf_dir}" }
 ```
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ###<a id="example-8-building-dependencies-between-parameters"></a>Example 8: Building dependencies between parameters
 
 Macros may be used to inter-depend parameters of defined types or classes. In
 other words, if one parameter is altered by user, others should be adjusted
-automatically, unless user specify them explicitly. For example we may define
-macros `'foo::a'` and `'foo::b'` as follows:
+automatically, unless user specify them explicitly. For example, we may have a
+defined type `testmodule::foo` with two parameters `$a` and `$b` and we want
+`$b` to depend on `$a`.  So, we may define macros `testmodule::foo::a` and
+`testmodule::foo::b`, and `testmodule::foo::b` may accept `$a` as an argument:
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/foo/a.rb
-Puppet::Parser::Macros.newmacro 'foo::a' do |a|
+# lib/puppet/parser/macros/testmodule/foo/a.rb
+Puppet::Parser::Macros.newmacro 'foo::a', &lambda {|a|
   (a.empty? or a.equal?(:undef)) ? 'default a' : a
-end
+}
 ```
 
 ```ruby
-# mymodule/lib/puppet/parser/macros/foo/b.rb
-Puppet::Parser::Macros.newmacro 'foo::b' do |b, a|
+# lib/puppet/parser/macros/testmodule/foo/b.rb
+Puppet::Parser::Macros.newmacro 'foo::b', &lambda { |b, a|
   (b.empty? or b.equal?(:undef)) ? "default b for a=#{a.inspect}" : b
-end
+}
 ```
 
-and the following manifest in *mymodule/manifests/foo.pp* file
+Then, if we split `testmodule::foo` into actual implementation (let say
+`testmodule::foo_impl`) and a wrapper (let's call it simply `testmodule::foo`),
+the job may be finished as follows:
 
 ```puppet
-# mymodule/manifests/foo.pp
-define mymodule::foo_impl($a, $b) {
+# manifests/foo.pp
+define testmodule::foo_impl($a, $b) {
   notify{$title: message => "${title}: a=\'${a}\', b=\'${b}\'"}
 }
-define mymodule::foo($a = undef, $b = undef)
+define testmodule::foo($a = undef, $b = undef)
 {
   $_a = determine('foo::a', $a)
   $_b = determine('foo::b', $b, $_a)
-  mymodule::foo_impl{"$title": a => $_a , b => $_b}
+  testmodule::foo_impl{"$title":
+    a => $_a,
+    b => $_b
+  }
 }
 ```
 
-Now, if we run the following command:
-
+Now, the following manifest
 ```console
 puppet apply --modulepath $(pwd) <<!
-mymodule::foo {defaults: }
-mymodule::foo {custom_a: a => 'custom a' }
-mymodule::foo {custom_b: b => 'custom b' }
-mymodule::foo {custom_a_and_b: a => 'custom a', b => 'custom b' }
-mymodule::foo {other: }
-Mymodule::Foo[other] { a => 'other default a' }
+testmodule::foo {defaults: }
+testmodule::foo {custom_a: a => 'custom a' }
+testmodule::foo {custom_b: b => 'custom b' }
+testmodule::foo {custom_a_and_b: a => 'custom a', b => 'custom b' }
+testmodule::foo {other: }
+Testmodule::Foo[other] { a => 'other default a' }
 !
 ```
-
-we shall see these lines at output:
-
+would output these lines:
 ```console
 Notice: defaults: a='default a', b='default b for a="default a"'
 Notice: custom_a: a='custom a', b='default b for a="custom a"'
@@ -260,7 +284,7 @@ Notice: custom_a_and_b: a='custom a', b='custom b'
 Notice: other: a='other default a', b='default b for a="other default a"'
 ```
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ##<a id="reference"></a>Reference
 
@@ -295,7 +319,7 @@ You may then invoke the macro from puppet as follows:
 
 - *Type*: rvalue
 
-|[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)|
+[[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)]
 
 ####<a id="invoke"></a>invoke
 Invoke macro as a statement.
@@ -312,9 +336,9 @@ Let say, you have defined the following macro in
 *puppet/parser/macros/print.rb*:
 
     # puppet/parser/macros/print.rb
-    Puppet::Parser::Macros.newmacro 'print' do |msg|
+    Puppet::Parser::Macros.newmacro 'print', &lambda{ |msg|
       print msg
-    end
+    }
 
 You may then invoke the macro from puppet as follows:
 
@@ -322,7 +346,7 @@ You may then invoke the macro from puppet as follows:
 
 - *Type*: statement
 
-|[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)|
+[[Index of functions](#index-of-functions)|[Table of Contents](#table-of-contents)]
 
 ###<a id="api-reference"></a>API Reference
 
@@ -335,7 +359,7 @@ bundle exec rake yard
 The generated documentation goes to `doc/` directory. Note that this works only
 under ruby >= 1.9.
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]
 
 ##Limitations
 
@@ -348,4 +372,4 @@ under ruby >= 1.9.
   It should work similarly as for functions but its not implemented at the
   moment. This may be added in future versions.
 
-|[Table of Contents](#table-of-contents)|
+[[Table of Contents](#table-of-contents)]

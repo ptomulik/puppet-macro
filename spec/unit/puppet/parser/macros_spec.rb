@@ -1,8 +1,9 @@
+#! /usr/bin/env ruby -S rspec
 require 'spec_helper'
 require 'puppet/parser/macros'
 
 describe Puppet::Parser::Macros do
-  before { described_class.macros.clear  }
+  before { described_class.instance_variable_set(:@macros,nil) }
 
   [
     :valid_name?,
@@ -66,7 +67,7 @@ describe Puppet::Parser::Macros do
       rescue LoadError
         begin
           require 'puppet/node/environment'
-        it { described_class.default_environment.should be_a klass }
+          it { described_class.default_environment.should be_a klass }
         rescue LoadError
           it { described_class.default_environment.should be_nil }
         end
@@ -242,13 +243,25 @@ describe Puppet::Parser::Macros do
   end
 
   describe 'autoloader' do
-    let(:autoloader) { stub('autoloader') }
-    before do
-      Puppet::Util::Autoload.stubs(:new).once.
-        with(described_class,'puppet/parser/macros', :wrap => false).
-        returns autoloader
+    after { described_class.instance_variable_set(:@autoloader, nil) }
+    context "when autoloader is not memoized yet" do
+      let(:autoloader) { stub('autoloader') }
+      before do
+        described_class.instance_variable_set(:@autoloader, nil)
+        Puppet::Util::Autoload.expects(:new).once.
+          with(described_class,'puppet/parser/macros', :wrap => false).returns autoloader
+      end
+      it { described_class.autoloader.should be autoloader }
+      it { described_class.autoloader.methods.map{|m| m.is_a?(Symbol) ? m : m.intern}.should include :loadall }
+      it { described_class.autoloader.methods.map{|m| m.is_a?(Symbol) ? m : m.intern}.should include :files_to_load }
     end
-    it { described_class.autoloader.should be autoloader }
+    context "when autoloader is already memoized" do
+      before { described_class.instance_variable_set(:@autoloader, :memoized) }
+      it do
+        Puppet::Util::Autoload.expects(:new).never
+        described_class.autoloader.should be :memoized
+      end
+    end
   end
 
   describe 'load' do
@@ -384,6 +397,29 @@ describe Puppet::Parser::Macros do
       let(:msg) { "invalid macro name foo-bar" }
       before { described_class.stubs(:validate_name).once.with("foo-bar").raises(ArgumentError, msg) }
       it { expect { described_class.call_macro(scope,["foo-bar"]) }.to raise_error Puppet::ParseError, msg }
+    end
+  end
+end
+
+
+require 'spec_helper_integration'
+# These are actually "integration" tests. It checks, for example, whether the
+# Puppet::Parser::Macros integrates well with puppet environments or
+# Puppet::Util::Autoloader.
+describe Puppet::Parser::Macros  do
+  before { described_class.instance_variable_set(:@macros,nil) }
+  describe 'macros() and autoloader' do
+    context 'macro("testmodule::foo::a",defaul_environment,false)' do
+      it "should not autoload macro" do
+        env = described_class.default_environment
+        described_class.macro("testmodule::foo::a", env, false).should be_nil
+      end
+    end
+    context 'macro("testmodule::foo::a",defaul_environment,true)' do
+      it "should autoload macro from disk" do
+        env = described_class.default_environment
+        described_class.macro("testmodule::foo::a", env, true).should be_instance_of Proc
+      end
     end
   end
 end
