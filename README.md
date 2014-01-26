@@ -151,8 +151,12 @@ $bar = determine('bar')
 notify { bar: message => "determine('bar') -> ${bar}" }
 ```
 
-you should see `determine('bar') -> macro foo::bar`, as it was defined in
-[Example 1](#example-1-defining-macro-in-ruby-code) for macro `foo::bar`.
+The above puppet code would print
+```console
+Notice: determine('bar') -> macro foo::bar
+```
+that is the result of macro `foo::bar` defined in
+[Example 1](#example-1-defining-macro-in-ruby-code).
 
 ###<a id="example-7-using-variables"></a>Example 7: Using variables
 
@@ -181,7 +185,7 @@ notify { apache_conf_dir: message => "determine('apache::conf_dir') -> ${apache_
 
 Macros may be used to inter-depend parameters of defined types or classes. In
 other words, if one parameter is altered by user, others should be adjusted
-automatically, unless user specify them as well. For example we may define
+automatically, unless user specify them explicitly. For example we may define
 macros `'foo::a'` and `'foo::b'` as follows:
 
 ```ruby
