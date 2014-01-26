@@ -186,40 +186,53 @@ macros `'foo::a'` and `'foo::b'` as follows:
 
 ```ruby
 # mymodule/lib/puppet/parser/macros/foo/a.rb
-Puppet::Parser::Macros.newmacro 'foo::a' do
-  'default a'
+Puppet::Parser::Macros.newmacro 'foo::a' do |a|
+  (a.empty? or a.equal?(:undef)) ? 'default a' : a
 end
 ```
 
 ```ruby
 # mymodule/lib/puppet/parser/macros/foo/b.rb
-Puppet::Parser::Macros.newmacro 'foo::b' do |a|
-  a = function_determine(['foo::a']) if not a or a.empty? or a.equal? :undef
-  "default b for a=#{a.inspect}"
+Puppet::Parser::Macros.newmacro 'foo::b' do |b, a|
+  (b.empty? or b.equal?(:undef)) ? "default b for a=#{a.inspect}" : b
 end
 ```
 
-and the following puppet manifest:
+and the following manifest in *mymodule/manifests/foo.pp* file
 
 ```puppet
-define foo( $a = determine('foo::a'),
-            $b = determine('foo::b', $a) )
-{
+# mymodule/manifests/foo.pp
+define mymodule::foo_impl($a, $b) {
   notify{$title: message => "${title}: a=\'${a}\', b=\'${b}\'"}
 }
-foo {defaults: }
-foo {custom_a: a => 'custom a' }
-foo {custom_b: b => 'custom b' }
-foo {custom_a_and_b: a => 'custom a', b => 'custom b' }
+define mymodule::foo($a = undef, $b = undef)
+{
+  $_a = determine('foo::a', $a)
+  $_b = determine('foo::b', $b, $_a)
+  mymodule::foo_impl{"$title": a => $_a , b => $_b}
+}
 ```
 
-Now, if we run the above manifest we shall see:
+Now, if we run the following command:
+
+```console
+puppet apply --modulepath $(pwd)
+mymodule::foo {defaults: }
+mymodule::foo {custom_a: a => 'custom a' }
+mymodule::foo {custom_b: b => 'custom b' }
+mymodule::foo {custom_a_and_b: a => 'custom a', b => 'custom b' }
+mymodule::foo {other: }
+Mymodule::Foo[other] { a => 'other default a' }
+```
+
+we shall see these lines at output:
 
 ```console
 Notice: defaults: a='default a', b='default b for a="default a"'
 Notice: custom_a: a='custom a', b='default b for a="custom a"'
 Notice: custom_b: a='default a', b='custom b'
 Notice: custom_a_and_b: a='custom a', b='custom b'
+Notice: other: a='other default a', b='default b for a="other default a"'
 ```
 
 ##<a id="reference"></a>Reference
