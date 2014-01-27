@@ -248,15 +248,19 @@ Then, if we split `testmodule::foo` into actual implementation (let say
 the job may be finished as follows:
 
 ```puppet
-# manifests/foo.pp
-define testmodule::foo_impl($a, $b) {
+# manifests/impl/foo.pp
+define testmodule::impl::foo($a, $b) {
   notify{$title: message => "${title}: a=\'${a}\', b=\'${b}\'"}
 }
+```
+
+```puppet
+# manifests/foo.pp
 define testmodule::foo($a = undef, $b = undef)
 {
-  $_a = determine('foo::a', $a)
-  $_b = determine('foo::b', $b, $_a)
-  testmodule::foo_impl{"$title":
+  $_a = determine('testmodule::foo::a', $a)
+  $_b = determine('testmodule::foo::b', $b, $_a)
+  testmodule::impl::foo{"$title":
     a => $_a,
     b => $_b
   }
