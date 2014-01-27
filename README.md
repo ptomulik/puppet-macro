@@ -70,7 +70,7 @@ $foo_bar = determine('foo::bar')
 notify { foo_bar: message => "determine('foo::bar') -> ${foo_bar}" }
 ```
 
-If you don't need the value returned by macro, then the you may invoke macro as
+If you don't need the value returned by macro, then you may invoke macro as
 a statement:
 
 ```puppet
@@ -81,20 +81,13 @@ invoke('foo::bar')
 
 ###<a id="example-3-macro-with-parameters"></a>Example 3: macro with parameters
 
-Let's define macro `sum` which adds two integers:
+Let's define macro `sum2` which adds two integers:
 
 ```ruby
 # lib/puppet/parser/macros/sum2.rb
 Puppet::Parser::Macros.newmacro 'sum2' do |x,y|
   Integer(x) + Integer(y)
 end
-```
-
-Now you may use it with:
-
-```puppet
-$sum = determine('sum2', 1, 2)
-notify { sum: message => "determine('sum2',1,2) -> ${sum}" }
 ```
 
 You may use **lambda** instead of a `do`..`end` block to enable strict arity
@@ -107,12 +100,19 @@ Puppet::Parser::Macros.newmacro 'sum2', &lambda { |x,y|
 }
 ```
 
+Now `sum2` may be used as follows:
+
+```puppet
+$sum = determine('sum2', 1, 2)
+notify { sum: message => "determine('sum2',1,2) -> ${sum}" }
+```
+
 [[Table of Contents](#table-of-contents)]
 
 ###<a id="example-4-variable-number-of-parameters"></a>Example 4: Variable number of parameters
 
-Let's redefine our `sum` from [Example 3](#example-3-macro-with-parameters) to accept arbitrary number of parameters:
-
+Let's redefine macro from [Example 3](#example-3-macro-with-parameters) to
+accept arbitrary number of parameters:
 ```ruby
 # lib/puppet/parser/macros/sum.rb
 Puppet::Parser::Macros.newmacro 'sum', &lambda { |*args|
@@ -120,8 +120,7 @@ Puppet::Parser::Macros.newmacro 'sum', &lambda { |*args|
 }
 ```
 
-Now you may use it with:
-
+Now, few experiments:
 ```puppet
 $zero = determine('sum')
 $one = determine('sum',1)
@@ -157,8 +156,8 @@ notify { content: message => $content }
 ```
 
 If you need the same for ruby *1.8*, here is a workaround (note that the
-calling function, that is [determine](#determine), will check the
-minimum arity, so we only check the maximum):
+caller i.e the [determine](#determine) function, will check the minimum arity,
+so we only check the maximum):
 
 ```ruby
 # lib/puppet/parser/macros/puppet/config/content.rb
@@ -198,9 +197,9 @@ that is the result of macro `foo::bar` defined in
 
 ###<a id="example-7-using-variables"></a>Example 7: Using variables
 
-You may access puppet variables, for example `$::osfamily` fact.  The following
-example determines default location of apache configs for operating system
-running on slave:
+You may access puppet variables, for example `$::osfamily` (fact).  The
+following example determines default location of apache configs for operating
+system running on slave:
 
 ```ruby
 # lib/puppet/parser/macros/apache/conf_dir.rb
