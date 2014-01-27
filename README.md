@@ -173,6 +173,23 @@ end
 
 ###<a id="example-6-invoking-macro-from-macro"></a>Example 6: Invoking macro from macro
 
+You may invoke macro using `call_macro` method:
+
+```ruby
+# lib/puppet/parser/macros/bar.rb
+Puppet::Parser::Macros.newmacro 'bar' do
+  Puppet::Parser::Macros.call_macro(self,'foo::bar',[])
+end
+```
+
+The first argument to `call_macro` is the scope from which the macro is
+invoked, second is the name of the macro to be invoked, third is an array of
+arguments to be passed to macro.
+
+You may alternatively use function interface, but this isn't the recommended
+way (you may receive misleading exception messages in case you mess up with
+arguments to macro).
+
 ```ruby
 # lib/puppet/parser/macros/bar.rb
 Puppet::Parser::Macros.newmacro 'bar' do
@@ -180,20 +197,20 @@ Puppet::Parser::Macros.newmacro 'bar' do
 end
 ```
 
-then in puppet
+If you test any of the above with the following puppet code:
 
 ```puppet
 $bar = determine('bar')
 notify { bar: message => "determine('bar') -> ${bar}" }
 ```
 
-The above puppet code would print
+then the following notice would appear on output:
 
 ```console
 Notice: determine('bar') -> macro foo::bar
 ```
 
-that is the result of macro `foo::bar` defined in
+Obviously the above text is the result of `foo::bar` macro defined in
 [Example 1](#example-1-defining-macro-in-ruby-code).
 
 [[Table of Contents](#table-of-contents)]

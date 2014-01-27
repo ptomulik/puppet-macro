@@ -1,3 +1,3 @@
 Puppet::Parser::Macros.newmacro 'bar' do 
-  function_determine(['foo::bar'])
+  Puppet::Parser::Macros.call_macro(self,'foo::bar',[])
 end
