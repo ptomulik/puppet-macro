@@ -61,7 +61,7 @@ The above macro simply returns the `'macro foo::bar'` string.
 
 [[Table of Contents](#table-of-contents)]
 
-###<a id="example-2-invoking-macro-in-puppet-manifest"></a>Example 2: invoking macro in puppet-manifest
+###<a id="example-2-invoking-macro-in-puppet-manifest"></a>Example 2: Invoking macro in puppet manifest
 
 Nothing simpler than:
 
@@ -79,7 +79,7 @@ invoke('foo::bar')
 
 [[Table of Contents](#table-of-contents)]
 
-###<a id="example-3-macro-with-parameters"></a>Example 3: macro with parameters
+###<a id="example-3-macro-with-parameters"></a>Example 3: Macro with parameters
 
 Let's define macro `sum2` which adds two integers:
 
@@ -103,6 +103,7 @@ notify { sum: message => "determine('sum2',1,2) -> ${sum}" }
 
 Let's redefine macro from [Example 3](#example-3-macro-with-parameters) to
 accept arbitrary number of parameters:
+
 ```ruby
 # lib/puppet/parser/macros/sum.rb
 Puppet::Parser::Macros.newmacro 'sum' do |*args|
@@ -111,6 +112,7 @@ end
 ```
 
 Now, few experiments:
+
 ```puppet
 $zero = determine('sum')
 $one = determine('sum',1)
@@ -127,6 +129,7 @@ notify { three: message => "determine('sum',1,2) -> ${three}" }
 Default parameters work only with ruby **1.9+**. If you don't care about
 compatibility with ruby **1.8**, you may define a macro with default parameters
 in the usual way:
+
 ```ruby
 # lib/puppet/parser/macros/puppet/config/content.rb
 Puppet::Parser::Macros.newmacro 'puppet::config::content' do |file='/etc/puppet/puppet.conf'|
@@ -135,11 +138,14 @@ end
 ```
 
 Now you may use it with:
+
 ```puppet
 $content = determine('puppet::config::content')
 notify { content: message => $content }
 ```
+
 or
+
 ```puppet
 $content = determine('puppet::config::content','/usr/local/etc/puppet/puppet.conf')
 notify { content: message => $content }
@@ -170,16 +176,20 @@ Puppet::Parser::Macros.newmacro 'bar' do
   function_determine(['foo::bar'])
 end
 ```
+
 then in puppet
+
 ```puppet
 $bar = determine('bar')
 notify { bar: message => "determine('bar') -> ${bar}" }
 ```
 
 The above puppet code would print
+
 ```console
 Notice: determine('bar') -> macro foo::bar
 ```
+
 that is the result of macro `foo::bar` defined in
 [Example 1](#example-1-defining-macro-in-ruby-code).
 
@@ -254,6 +264,7 @@ define testmodule::foo($a = undef, $b = undef)
 ```
 
 Now, the following manifest
+
 ```console
 puppet apply --modulepath $(pwd) <<!
 testmodule::foo {defaults: }
@@ -264,7 +275,9 @@ testmodule::foo {other: }
 Testmodule::Foo[other] { a => 'other default a' }
 !
 ```
+
 would output these lines:
+
 ```console
 Notice: defaults: a='default a', b='default b for a="default a"'
 Notice: custom_a: a='custom a', b='default b for a="custom a"'
