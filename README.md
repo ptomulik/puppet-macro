@@ -52,12 +52,15 @@ named *lib/puppet/parser/macros/foo/bar.rb*:
 
 ```ruby
 # lib/puppet/parser/macros/foo/bar.rb
-Puppet::Parser::Macros.newmacro 'foo::bar' do
+Puppet::Parser::Macros.newmacro 'foo::bar' do ||
   'macro foo::bar'
 end
 ```
 
-The above macro simply returns the `'macro foo::bar'` string.
+The above macro simply returns the `'macro foo::bar'` string. Note the empty
+argument list `||`. This enforces strict arity checking (zero arguments) on
+ruby **1.8**. Without `||` the block is assumed to accept arbitrary number of
+arguments on **1.8** and no arguments on **1.9**. 
 
 [[Table of Contents](#table-of-contents)]
 

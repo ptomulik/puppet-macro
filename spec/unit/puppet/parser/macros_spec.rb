@@ -8,6 +8,10 @@ describe Puppet::Parser::Macros do
   [
     :valid_name?,
     :validate_name,
+    :macro_arities_by_parameters,
+    :macro_arities_by_arity,
+    :macro_arities,
+    :check_macro_arity,
     :default_environment,
     :newmacro,
     :macros,
@@ -16,10 +20,6 @@ describe Puppet::Parser::Macros do
     :load,
     :load_from_file,
     :loadall,
-    :macro_arities_by_parameters,
-    :macro_arities_by_arity,
-    :macro_arities,
-    :check_macro_arity,
     :get_macro,
     :fix_error_msg,
     :call_macro,
@@ -30,6 +30,7 @@ describe Puppet::Parser::Macros do
     end
   end
 
+  # From Validation module
   describe 'valid_name?' do
     [1,nil,{},[],'9','1ad','',':','::','::9','::asd::'].each do |name|
       context "validat_name?(#{name.inspect})" do
@@ -62,6 +63,145 @@ describe Puppet::Parser::Macros do
     end
   end
 
+  if Puppet::Util::Package.versioncmp(RUBY_VERSION,'1.9') >= 0
+    describe 'macro_arities_by_parameters' do
+      context 'macro_arities_by_parameters(lambda{})' do
+        let(:macro) { lambda{} }
+        it { described_class.macro_arities_by_parameters(macro).should == [0,0] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x|})' do
+        let(:macro) { lambda{|x|} }
+        it { described_class.macro_arities_by_parameters(macro).should == [1,1] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x,y|})' do
+        let(:macro) { lambda{|x,y|} }
+        it { described_class.macro_arities_by_parameters(macro).should == [2,2] }
+      end
+      context 'macro_arities_by_parameters(lambda{|*x|})' do
+        let(:macro) { lambda{|*x|} }
+        it { described_class.macro_arities_by_parameters(macro).should == [0,:inf] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x,*y|})' do
+        let(:macro) { lambda{|x,*y|} }
+        it { described_class.macro_arities_by_parameters(macro).should == [1,:inf] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x,y=nil|})' do
+        let(:macro) { Kernel.eval('lambda{|x,y=nil|}')} # must eval, otherwise it would break compilation on 1.8
+        it { described_class.macro_arities_by_parameters(macro).should == [1,2] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x,y=nil,*z|})' do
+        let(:macro) { Kernel.eval('lambda{|x,y=nil,*z|}')} # must eval, otherwise it would break compilation on 1.8
+        it { described_class.macro_arities_by_parameters(macro).should == [1,:inf] }
+      end
+      context 'macro_arities_by_parameters(lambda{|x,y=nil,*z,v|})' do
+        let(:macro) { Kernel.eval('lambda{|x,y=nil,*z,v|}')} # must eval, otherwise it would break compilation on 1.8
+        it { described_class.macro_arities_by_parameters(macro).should == [2,:inf] }
+      end
+    end
+  end
+
+  describe 'macro_arities_by_arity' do
+    context 'macro_arities_by_arity(lambda{||})' do
+      let(:macro) { lambda{||} }
+      it { described_class.macro_arities_by_arity(macro).should == [0,0] }
+    end
+    context 'macro_arities_by_arity(lambda{|x|})' do
+      let(:macro) { lambda{|x|} }
+      it { described_class.macro_arities_by_arity(macro).should == [1,1] }
+    end
+    context 'macro_arities_by_arity(lambda{|x,y|})' do
+      let(:macro) { lambda{|x,y|} }
+      it { described_class.macro_arities_by_arity(macro).should == [2,2] }
+    end
+    context 'macro_arities_by_arity(lambda{|*x|})' do
+      let(:macro) { lambda{|*x|} }
+      it { described_class.macro_arities_by_arity(macro).should == [0,:inf] }
+    end
+    context 'macro_arities_by_arity(lambda{|x,*y|})' do
+      let(:macro) { lambda{|x,*y|} }
+      it { described_class.macro_arities_by_arity(macro).should == [1,:inf] }
+    end
+    if Puppet::Util::Package.versioncmp(RUBY_VERSION,'1.9') >= 0
+      # This actually shows how 'arity' fails for default parameters
+      context 'macro_arities_by_arity(lambda{|x,y=nil|})' do
+        let(:macro) { Kernel.eval('lambda{|x,y=nil|}')} # must eval, otherwise it would break compilation on 1.8
+        it { described_class.macro_arities_by_arity(macro).should == [1,1] }
+      end
+      context 'macro_arities_by_arity(lambda{|x,*y,z|})' do
+        let(:macro) { Kernel.eval('lambda{|x,*y,z|}') } # must eval, otherwise it would break compilation on 1.8
+        it { described_class.macro_arities_by_arity(macro).should == [2,:inf] }
+      end
+    end
+  end
+
+  describe 'macro_arities' do
+    context 'on objects having "parameters" method' do
+      let(:macro) { stub('macro', :parameters => []) }
+      before do
+        described_class.stubs(:macro_arities_by_parameters).once.with(macro).returns :ok
+        described_class.stubs(:macro_arities_by_arity).never
+      end
+      it("should == macro_arities_by_parameters(macro)") { described_class.macro_arities(macro).should be :ok }
+    end
+    context 'on objects that do not have "parameters" method' do
+      let(:macro) { stub('macro') }
+      before do
+        described_class.stubs(:macro_arities_by_parameters).never
+        described_class.stubs(:macro_arities_by_arity).once.with(macro).returns :ok
+      end
+      it("should == macro_arities_by_arity(macro)"){ described_class.macro_arities(macro).should be :ok }
+    end
+  end
+
+  describe 'check_macro_arity' do
+    context 'check_macro_arity(lambda{},[])' do
+      it { expect { described_class.check_macro_arity(lambda{},[]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{||},[])' do
+      it { expect { described_class.check_macro_arity(lambda{||},[]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{||},[:arg1])' do
+      it { expect { described_class.check_macro_arity(lambda{||},[:arg1]) }.to raise_error ArgumentError, "Wrong number of arguments (1 for 0)"}
+    end
+    context 'check_macro_arity(lambda{|x|},[:arg1])' do
+      it { expect { described_class.check_macro_arity(lambda{|x|},[:arg1]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{|x|},[])' do
+      it { expect { described_class.check_macro_arity(lambda{|x|},[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for 1)"}
+    end
+    context 'check_macro_arity(lambda{|x|},[:arg1,:arg2])' do
+      it { expect { described_class.check_macro_arity(lambda{|x|},[:arg1,:arg2]) }.to raise_error ArgumentError, "Wrong number of arguments (2 for 1)"}
+    end
+    context 'check_macro_arity(lambda{|*x|},[])' do
+      it { expect { described_class.check_macro_arity(lambda{|*x|},[]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{|*x|},[:arg1,:arg2])' do
+      it { expect { described_class.check_macro_arity(lambda{|*x|},[:arg1,:arg2]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{|x,*y|},[])' do
+      it { expect { described_class.check_macro_arity(lambda{|x,*y|},[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for minimum 1)"}
+    end
+    context 'check_macro_arity(lambda{|x,*y|},[:arg1])' do
+      it { expect { described_class.check_macro_arity(lambda{|x,*y|},[:arg1]) }.to_not raise_error }
+    end
+    context 'check_macro_arity(lambda{|x,*y|},[:arg1,:arg2])' do
+      it { expect { described_class.check_macro_arity(lambda{|x,*y|},[:arg1,:arg2]) }.to_not raise_error }
+    end
+    if Puppet::Util::Package.versioncmp(RUBY_VERSION,'1.9') >= 0
+      context 'check_macro_arity(lambda{|x=nil|},[])' do
+        it { expect { described_class.check_macro_arity(Kernel.eval('lambda{|x=nil|}'),[]) }.to_not raise_error }
+      end
+      context 'check_macro_arity(lambda{|x=nil|},[:arg1])' do
+        it { expect { described_class.check_macro_arity(Kernel.eval('lambda{|x=nil|}'),[:arg1]) }.to_not raise_error }
+      end
+      context 'check_macro_arity(lambda{|x=nil|},[:arg1,:arg2])' do
+        it { expect { described_class.check_macro_arity(Kernel.eval('lambda{|x=nil|}'),[:arg1,:arg2]) }.to raise_error ArgumentError, "Wrong number of arguments (2 for maximum 1)"}
+      end
+    end
+  end
+
+
+  # From DefaultEnvironment module
   describe 'default_environment' do
     let(:klass) { Puppet::Node::Environment }
     if Puppet.respond_to?(:lookup)
@@ -80,6 +220,9 @@ describe Puppet::Parser::Macros do
       end
     end
   end
+
+  # From ToLambda module
+ 
 
   describe 'newmacro' do
     let(:hash) { Hash.new }
