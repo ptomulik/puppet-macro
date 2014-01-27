@@ -1,3 +1,3 @@
-Puppet::Parser::Macros.newmacro 'sum', &lambda { |*args|
+Puppet::Parser::Macros.newmacro 'sum' do |*args|
   args.map{|x| Integer(x)}.reduce(0,:+)
-}
+end

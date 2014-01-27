@@ -40,13 +40,13 @@ describe "determine function with macros" do
   before do
     function
     Puppet::Parser::Macros.instance_variable_set(:@macros,nil)
-    Puppet::Parser::Macros.newmacro 'local::a', &lambda {|a|
+    Puppet::Parser::Macros.newmacro 'local::a', &Proc.new {|a|
       (not a or a.equal?(:undef) or a.empty?) ? 'default a' : a
     }
-    Puppet::Parser::Macros.newmacro 'local::b', &lambda {|b,a|
+    Puppet::Parser::Macros.newmacro 'local::b', &Proc.new {|b,a|
       (not b or b.equal?(:undef) or b.empty?) ? "default b for a=#{a.inspect}" : b
     }
-    Puppet::Parser::Macros.newmacro 'local::c', &lambda {|b,*rest| }
+    Puppet::Parser::Macros.newmacro 'local::c', &Proc.new {|b,*rest| }
   end
   after { Puppet::Parser::Macros.instance_variable_set(:@macros,nil) }
 

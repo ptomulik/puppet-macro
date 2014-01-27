@@ -90,16 +90,6 @@ Puppet::Parser::Macros.newmacro 'sum2' do |x,y|
 end
 ```
 
-You may use **lambda** instead of a `do`..`end` block to enable strict arity
-checking, for example:
-
-```ruby
-# lib/puppet/parser/macros/sum2.rb
-Puppet::Parser::Macros.newmacro 'sum2', &lambda { |x,y|
-  Integer(x) + Integer(y)
-}
-```
-
 Now `sum2` may be used as follows:
 
 ```puppet
@@ -115,9 +105,9 @@ Let's redefine macro from [Example 3](#example-3-macro-with-parameters) to
 accept arbitrary number of parameters:
 ```ruby
 # lib/puppet/parser/macros/sum.rb
-Puppet::Parser::Macros.newmacro 'sum', &lambda { |*args|
+Puppet::Parser::Macros.newmacro 'sum' do |*args|
   args.map{|x| Integer(x)}.reduce(0,:+)
-}
+end
 ```
 
 Now, few experiments:
@@ -139,9 +129,9 @@ compatibility with ruby **1.8**, you may define a macro with default parameters
 in the usual way:
 ```ruby
 # lib/puppet/parser/macros/puppet/config/content.rb
-Puppet::Parser::Macros.newmacro 'puppet::config::content', &lambda {|file='/etc/puppet/puppet.conf'|
+Puppet::Parser::Macros.newmacro 'puppet::config::content' do |file='/etc/puppet/puppet.conf'|
   File.read(file)
-}
+end
 ```
 
 Now you may use it with:
@@ -161,13 +151,13 @@ so we only check the maximum):
 
 ```ruby
 # lib/puppet/parser/macros/puppet/config/content.rb
-Puppet::Parser::Macros.newmacro 'puppet::config::content', &lambda {|*args|
+Puppet::Parser::Macros.newmacro 'puppet::config::content' do |*args|
   if args.size > 1
     raise Puppet::ParseError, "Wrong number of arguments (#{args.size} for maximum 1)"
   end
   args << '/etc/puppet/puppet.conf' if args.size < 1
   File.read(args[0])
-}
+end
 ```
 
 [[Table of Contents](#table-of-contents)]
@@ -176,9 +166,9 @@ Puppet::Parser::Macros.newmacro 'puppet::config::content', &lambda {|*args|
 
 ```ruby
 # lib/puppet/parser/macros/bar.rb
-Puppet::Parser::Macros.newmacro 'bar', &lambda {
+Puppet::Parser::Macros.newmacro 'bar' do
   function_determine(['foo::bar'])
-}
+end
 ```
 then in puppet
 ```puppet
@@ -203,14 +193,14 @@ system running on slave:
 
 ```ruby
 # lib/puppet/parser/macros/apache/conf_dir.rb
-Puppet::Parser::Macros.newmacro 'apache::conf_dir', &lambda {
+Puppet::Parser::Macros.newmacro 'apache::conf_dir' do
   case os = lookupvar("::osfamily")
   when /FreeBSD/; '/usr/local/etc/apache22'
   when /Debian/; '/usr/etc/apache2'
   else
     raise Puppet::Error, "unsupported osfamily #{os.inspect}"
   end
-}
+end
 ```
 
 ```puppet
@@ -231,16 +221,16 @@ defined type `testmodule::foo` with two parameters `$a` and `$b` and we want
 
 ```ruby
 # lib/puppet/parser/macros/testmodule/foo/a.rb
-Puppet::Parser::Macros.newmacro 'testmodule::foo::a', &lambda { |a|
+Puppet::Parser::Macros.newmacro 'testmodule::foo::a' do |a|
     (not a or a.equal?(:undef) or a.empty?) ? 'default a' : a
-}
+end
 ```
 
 ```ruby
 # lib/puppet/parser/macros/testmodule/foo/b.rb
-Puppet::Parser::Macros.newmacro 'testmodule::foo::b', &lambda { |b, a|
+Puppet::Parser::Macros.newmacro 'testmodule::foo::b' do |b, a|
     (not b or b.equal?(:undef) or b.empty?) ? "default b for a=#{a.inspect}" : b
-}
+end
 ```
 
 Then, if we split `testmodule::foo` into actual implementation (let say
