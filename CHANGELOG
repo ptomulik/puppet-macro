@@ -1,4 +1,5 @@
 2014-01-27 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * revised documentation for functions
   * release 0.0.7
   * removed workaround for travis bug
   * refactoring
