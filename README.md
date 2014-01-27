@@ -63,7 +63,7 @@ The above macro simply returns the `'macro foo::bar'` string.
 
 ###<a id="example-2-invoking-macro-in-puppet-manifest"></a>Example 2: invoking macro in puppet-manifest
 
-Nothing simpler that:
+Nothing simpler than:
 
 ```puppet
 $foo_bar = determine('foo::bar')
