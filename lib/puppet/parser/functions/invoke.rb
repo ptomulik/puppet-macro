@@ -5,10 +5,9 @@ module Puppet::Parser::Functions
   Invoke macro as a statement.
 
   This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
-  method and returns nil (that is it doesn't return any value to puppet).
-  The function takes macro name as first argument and macro parameters as the
-  rest of arguments. The number of arguments provided by user is validated
-  against the macro's arity.
+  method. The function takes macro name as first argument and macro parameters
+  as the rest of arguments. The number of arguments provided by user is
+  validated against the macro's arity.
 
   *Example*:
 
@@ -25,10 +24,6 @@ module Puppet::Parser::Functions
       invoke('print',"hello world!\\n")
   EOT
   ) do |args|
-    begin
-      Puppet::Parser::Macros.call_macro(self,args)
-    rescue Puppet::ParseError => err
-      raise Puppet::ParseError, "invoke(): #{err.message}", err.backtrace
-    end
+    Puppet::Parser::Macros.call_macro_from_func(self,:invoke,args)
   end
 end

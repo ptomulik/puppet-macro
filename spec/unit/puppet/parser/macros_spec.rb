@@ -16,8 +16,14 @@ describe Puppet::Parser::Macros do
     :load,
     :load_from_file,
     :loadall,
+    :macro_arities_by_parameters,
+    :macro_arities_by_arity,
+    :macro_arities,
     :check_macro_arity,
-    :call_macro
+    :get_macro,
+    :fix_error_msg,
+    :call_macro,
+    :call_macro_from_func
   ].each do |method|
     it "should respond to #{method}" do
       described_class.should respond_to method
@@ -346,57 +352,97 @@ describe Puppet::Parser::Macros do
   describe "call_macro" do
     let(:scope) { stub('scope') }
     before { described_class.stubs(:default_environment).with().returns :env0 }
-    context "call_macro(scope,[])" do
-      let(:msg) { 'Wrong number of arguments (0). You must provide at least macro name' }
-      it { expect { described_class.call_macro(scope,[]) }.to raise_error Puppet::ParseError, /#{Regexp.escape(msg)}/ }
-    end
-
     context 'call_macro(scope,["foo::bar"])' do
-      before { described_class.expects(:validate_name).once.with("foo::bar") }
+      before { described_class.expects(:validate_name).once.with("foo::bar",ArgumentError) }
       context 'when "foo::bar" is a defined macro' do
         let(:macro) { lambda {|| :ok1} }
         before { described_class.stubs(:macro).with("foo::bar",:env0).returns macro }
-        it { described_class.call_macro(scope,["foo::bar"]).should be :ok1 }
+        it { described_class.call_macro(scope,"foo::bar",[]).should be :ok1 }
       end
       context 'when "foo::bar" is undefined' do
-        let(:msg) { 'Undefined macro foo::bar' }
         before { described_class.stubs(:macro).with("foo::bar",:env0).returns nil }
-        it { expect { described_class.call_macro(scope,["foo::bar"]) }.to raise_error Puppet::ParseError, /#{Regexp.escape(msg)}/ }
+        it { expect { described_class.call_macro(scope,"foo::bar",[]) }.to raise_error Puppet::Error, 'Undefined macro foo::bar' }
       end
     end
 
     context 'with macro upcase being lambda {|x| x.upcase}' do
       let(:macro) { lambda {|x| x.upcase} }
       before { described_class.stubs(:macro).with("upcase",:env0).returns macro }
-      context 'call_macro(scope,["upcase"])' do
-        it { expect { described_class.call_macro(scope,["upcase"]) }.to raise_error Puppet::ParseError, "Wrong number of arguments (1 for 2)" }
+      context 'call_macro(scope,"upcase",[])' do
+        it { expect { described_class.call_macro(scope,"upcase",[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for 1)" }
       end
-      context 'call_macro(scope,["upcase", "arg1"])' do
-        it { described_class.call_macro(scope,["upcase", "arg1"]).should == "ARG1" }
+      context 'call_macro(scope,"upcase", ["arg1"])' do
+        it { described_class.call_macro(scope,"upcase",["arg1"]).should == "ARG1" }
       end
-      context 'call_macro(scope,["upcase","arg1","arg2"])' do
-        it { expect { described_class.call_macro(scope,["upcase","arg1","arg2"]) }.to raise_error Puppet::ParseError, "Wrong number of arguments (3 for 2)" }
+      context 'call_macro(scope,"upcase",["arg1","arg2"])' do
+        it { expect { described_class.call_macro(scope, "upcase",["arg1","arg2"]) }.to raise_error ArgumentError, "Wrong number of arguments (2 for 1)" }
       end
     end
 
     context 'with macro upcase being lambda {|x,*y| x.upcase}' do
       let(:macro) { lambda {|x,*y| x.upcase} }
       before { described_class.stubs(:macro).with("upcase",:env0).returns macro }
-      context 'call_macro(scope,["upcase"])' do
-        it { expect { described_class.call_macro(scope,["upcase"]) }.to raise_error Puppet::ParseError, "Wrong number of arguments (1 for minimum 2)" }
+      context 'call_macro(scope,"upcase",[])' do
+        it { expect { described_class.call_macro(scope,"upcase",[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for minimum 1)" }
       end
       [ ["arg1"], ["arg1","arg2"], ["arg1","arg2","arg3"] ].each do |args|
         let(:args) { args }
-        context "call_macro(\"func\",\"upcase\", #{args.map{|x| x.inspect}.join(', ')})" do
-          it { described_class.call_macro(scope,["upcase",*args]).should == "ARG1" }
+        context "call_macro(scope,\"upcase\", #{args.inspect})" do
+          it { described_class.call_macro(scope,"upcase",args).should == "ARG1" }
         end
       end
     end
 
-    context 'call_macro(scope,["foo-bar"])' do
-      let(:msg) { "invalid macro name foo-bar" }
-      before { described_class.stubs(:validate_name).once.with("foo-bar").raises(ArgumentError, msg) }
-      it { expect { described_class.call_macro(scope,["foo-bar"]) }.to raise_error Puppet::ParseError, msg }
+    context 'call_macro(scope,"foo-bar",[])' do
+      let(:msg) { "Invalid macro name foo-bar" }
+      before { described_class.stubs(:validate_name).once.with("foo-bar",ArgumentError).raises ArgumentError, msg }
+      it { expect { described_class.call_macro(scope,"foo-bar",[]) }.to raise_error ArgumentError, msg }
+    end
+
+    context 'call_macro(scope,"foo-bar",[], {:a_err => Puppet::ParseError}, :env1)' do
+      let(:msg) { "Invalid macro name foo-bar" }
+      before { described_class.stubs(:validate_name).once.with("foo-bar",Puppet::ParseError).raises Puppet::ParseError, msg }
+      it { expect { described_class.call_macro(scope, "foo-bar", [], {:a_err => Puppet::ParseError}, :env1) }.to raise_error Puppet::ParseError, msg }
+    end
+  end
+
+  describe 'call_macro_from_func' do
+    let(:scope) { stub('scope') }
+    before { described_class.stubs(:default_environment).with().returns :env0 }
+    context "call_macro_from_func(scope,'somefun',[])" do
+      it { expect { described_class.call_macro_from_func(scope,'somefun',[]) }.to raise_error Puppet::ParseError, 'somefun(): Wrong number of arguments (0) - missing macro name' }
+    end
+    context "call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2])" do
+      it "should == call_macro(scope,'foo', [:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, default_environment)" do
+        described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env0).returns :ok
+        described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2]).should be :ok
+      end
+    end
+    context "call_macro_from_func(scope, 'somefun', ['foo',:arg1,:arg2], 1, :env1)" do
+      it "should == call_macro(scope, 'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1)" do
+        described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).returns :ok
+        described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1).should be :ok
+      end
+      context "when call_macro(...) raises Puppet::ParseError with message 'blah blah'" do
+        before { described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).raises Puppet::ParseError, "blah blah"}
+        it { expect { described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1) }.to raise_error Puppet::ParseError, 'somefun(): blah blah' }
+      end
+      context "when call_macro(...) raises ArgumentError with message 'Wrong number of arguments (0 for 1)'" do
+        before { described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).raises Puppet::ParseError, "Wrong number of arguments (0 for 1)"}
+        it { expect { described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1) }.to raise_error Puppet::ParseError, 'somefun(): Wrong number of arguments (2 for 3)' }
+      end
+      context "when call_macro(...) raises ArgumentError with message 'Wrong number of arguments (0 for minimum 1)'" do
+        before { described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).raises Puppet::ParseError, "Wrong number of arguments (0 for minimum 1)"}
+        it { expect { described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1) }.to raise_error Puppet::ParseError, 'somefun(): Wrong number of arguments (2 for minimum 3)' }
+      end
+      context "when call_macro(...) raises ArgumentError with message 'Wrong number of arguments (0 for maximum 1)'" do
+        before { described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).raises Puppet::ParseError, "Wrong number of arguments (0 for maximum 1)"}
+        it { expect { described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1) }.to raise_error Puppet::ParseError, 'somefun(): Wrong number of arguments (2 for maximum 3)' }
+      end
+      context "when call_macro(...) raises ArgumentError with message 'blah blah'" do
+        before { described_class.expects(:call_macro).once.with(scope,'foo',[:arg1,:arg2], {:a_err => Puppet::ParseError, :l_err => Puppet::ParseError}, :env1).raises ArgumentError, "blah blah"}
+        it { expect { described_class.call_macro_from_func(scope,'somefun',['foo',:arg1,:arg2], 1, :env1) }.to raise_error ArgumentError, 'blah blah' }
+      end
     end
   end
 end

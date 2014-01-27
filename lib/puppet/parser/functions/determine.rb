@@ -5,7 +5,7 @@ module Puppet::Parser::Functions
   Determine value of a macro.
 
   This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
-  method and returns it's value. The function takes macro name as first
+  method and returns its value. The function takes macro name as first
   argument and macro parameters as the rest of arguments. The number of
   arguments provided by user is validated against the macro's arity.
 
@@ -24,10 +24,6 @@ module Puppet::Parser::Functions
       $three = determine('sum',1,2) # -> 3
   EOT
   ) do |args|
-    begin
-      Puppet::Parser::Macros.call_macro(self,args)
-    rescue Puppet::ParseError => err
-      raise Puppet::ParseError, "determine(): #{err.message}", err.backtrace
-    end
+    Puppet::Parser::Macros.call_macro_from_func(self,:determine,args)
   end
 end

@@ -1,6 +1,91 @@
 require 'puppet'
 require 'puppet/util/autoload'
 
+module Puppet::Parser::Macros; end
+
+# Utility module for {Puppet::Parser::Macros}
+module Puppet::Parser::Macros::DefaultEnvironment
+  # This tries to ensure compatibility with different versions of Puppet
+  # @api private
+  if Puppet.respond_to?(:lookup)
+    def default_environment
+      Puppet.lookup(:current_environment)
+    end
+  else
+    begin
+      require 'puppet/context'
+      def default_environment
+        Puppet::Context.lookup(:current_environment)
+      end
+    rescue LoadError
+      begin
+        require 'puppet/node/environment'
+        def default_environment
+          Puppet::Node::Environment.current
+        end
+      rescue LoadError
+        def default_environment
+          nil
+        end
+      end
+    end
+  end
+end
+
+# Utility module for {Puppet::Parser::Macros}
+module Puppet::Parser::Macros::Validation
+  # Validate name
+  #
+  # @param name [Object] the name to be validated
+  # @raise [ArgumentError]
+  # @api private
+  def validate_name(name, errclass = ArgumentError)
+    unless valid_name?(name)
+      raise errclass, "Invalid macro name #{name.inspect}"
+    end
+  end
+
+  # @api private
+  def macro_arities_by_parameters(macro)
+    arg_kinds = macro.parameters.map{|kind,name| kind}
+    min_arity = arg_kinds.count(:req)
+    max_arity = arg_kinds.include?(:rest) ? :inf : arg_kinds.size
+    [min_arity, max_arity]
+  end
+
+  # @api private
+  def macro_arities_by_arity(macro)
+    arity = macro.arity
+    min_arity, max_arity = (arity>=0) ? [arity, arity] : [arity.abs-1, :inf]
+  end
+
+  # @api private
+  def macro_arities(macro)
+    # Using macro.parameters is far more reliable than macro.arity, but
+    # parameters are missing in ruby<=1.8.
+    if macro.respond_to?(:parameters)
+      macro_arities_by_parameters(macro)
+    else
+      macro_arities_by_arity(macro)
+    end
+  end
+
+  # @api private
+  def check_macro_arity(macro, macro_args, errclass = ArgumentError)
+    min_arity, max_arity = macro_arities(macro)
+    argn = macro_args.size
+    if min_arity == max_arity
+      if argn != min_arity
+        raise errclass, "Wrong number of arguments (#{argn} for #{min_arity})"
+      end
+    elsif argn < min_arity
+      raise errclass, "Wrong number of arguments (#{argn} for minimum #{min_arity})"
+    elsif (not max_arity.equal?(:inf)) and (argn > max_arity)
+      raise errclass, "Wrong number of arguments (#{argn} for maximum #{max_arity})"
+    end
+  end
+end
+
 module Puppet::Parser::Macros
   # This object keeps track of macros defined within a single puppet
   # environment. Existing hashes (macros for existing environments) may be
@@ -9,6 +94,9 @@ module Puppet::Parser::Macros
   attr_accessor :environment
 
   class << self
+    include DefaultEnvironment
+    include Validation
+
     MACRO_NAME_RE =  /^[a-z_][a-z0-9_]*(?:::[a-z_][a-z0-9_]*)*$/
 
     # Check whether **name** is a valid macro name.
@@ -18,43 +106,6 @@ module Puppet::Parser::Macros
     # @api private
     def valid_name?(name)
       name.is_a?(String) and MACRO_NAME_RE.match(name)
-    end
-
-    # Validate name
-    #
-    # @param name [Object] the name to be validated
-    # @raise [ArgumentError]
-    # @api private
-    def validate_name(name)
-      unless valid_name?(name)
-        raise ArgumentError, "Invalid macro name #{name.inspect}"
-      end
-    end
-
-    # This tries to ensure compatibility with different versions of Puppet
-    # @api private
-    if Puppet.respond_to?(:lookup)
-      def default_environment
-        Puppet.lookup(:current_environment)
-      end
-    else
-      begin
-        require 'puppet/context'
-        def default_environment
-          Puppet::Context.lookup(:current_environment)
-        end
-      rescue LoadError
-        begin
-          require 'puppet/node/environment'
-          def default_environment
-            Puppet::Node::Environment.current
-          end
-        rescue LoadError
-          def default_environment
-            nil
-          end
-        end
-      end
     end
 
     # Define new preprocessor macro.
@@ -165,17 +216,15 @@ module Puppet::Parser::Macros
     def load_from_file(name, path, env = default_environment)
       if autoloader.load(path, env)
         # the autoloaded code should add its macro to macros
-        if m = self.macro(name,env,false)
-          return m
-        else
-          msg = "#{autoloader.expand(path).inspect} loaded but it didn't " +
-            "define macro #{name.inspect}"
+        unless m = self.macro(name,env,false)
+          Puppet.debug("#{autoloader.expand(path).inspect} loaded but it " +
+            "didn't define macro #{name.inspect}")
         end
+        m
       else
-        msg = "could not autoload #{autoloader.expand(path).inspect}"
+        Puppet.debug("could not autoload #{autoloader.expand(path).inspect}")
+        nil
       end
-      Puppet.debug(msg)
-      nil
     end
 
     # Autoload all existing macro definitions in current environment
@@ -187,63 +236,78 @@ module Puppet::Parser::Macros
     end
 
     # @api private
-    def macro_arities(macro)
-      # Using macro.parameters is far more reliable than macro.arity. The
-      # parameters, however, were introduced in ruby 1.9.
-      if macro.respond_to?(:parameters)
-        arg_kinds = macro.parameters.map{|kind,name| kind}
-        min_arity = arg_kinds.count(:req)
-        max_arity = arg_kinds.include?(:rest) ? :inf : arg_kinds.size
-      else
-        arity = macro.arity
-        min_arity, max_arity = (arity>=0) ? [arity, arity] : [arity.abs-1, :inf]
+    def get_macro(name, env = default_environment, errclass = Puppet::Error)
+      unless macro = self.macro(name,env)
+        raise errclass, "Undefined macro #{name}"
       end
-      [min_arity,max_arity]
+      macro
     end
 
+    # Fix error messages to indicate number of arguments to parser function
+    # instead of the number of arguments to macro and prepend the function
+    # name.
+    # @param func [Symbol|String] function name,
+    # @param msg [String] original message from callee,
+    # @param n [Integer] number of arguments shifted from function's arglist,
+    # @return [String] fixed message
     # @api private
-    def check_macro_arity(macro,macro_args)
-      min_arity, max_arity = macro_arities(macro)
-      argn = macro_args.size
-      if min_arity == max_arity
-        if argn != min_arity
-          raise Puppet::ParseError,
-            "Wrong number of arguments (#{1+argn} for #{1+min_arity})"
-        end
-      elsif argn < min_arity
-        raise Puppet::ParseError,
-          "Wrong number of arguments (#{1+argn} for minimum #{1+min_arity})"
-      elsif (not max_arity.equal?(:inf)) and (argn > max_arity)
-        raise Puppet::ParseError,
-          "Wrong number of arguments (#{1+argn} for maximum #{1+max_arity})"
+    def fix_error_msg(func, msg, n = 0)
+      re = /^Wrong number of arguments \(([0-9]+) for (minimum |maximum )?([0-9]+)\)$/
+      if m = re.match(msg)
+        msg = "Wrong number of arguments (#{n+Integer(m.captures[0])} " +
+          "for #{m.captures[1]}#{n+Integer(m.captures[2])})"
       end
+      "#{func}(): #{msg}"
     end
 
-    # Call the macro from a parser function.
+
+    # Call a macro.
     #
     # @param scope [Puppet::Parser::Scope] scope of the calling function
-    # @param func_args [Array] arguments, as provided to calling function
+    # @param name [String] name of the macro to be invoked
+    # @param args [Array] arguments to be provided to teh macro
+    # @param options [Hash] additional options
     # @param env [Puppet::Node::Environment] environment
-    def call_macro(scope,func_args,env = default_environment)
-      if(func_args.size == 0)
-        raise Puppet::ParseError, "Wrong number of arguments (0). You " +
-          "must provide at least macro name"
-      end
+    # @option options :a_err [Class] an exception to be raised when argument
+    #   validation fails, defaults to **ArgumentError**
+    # @option options :l_err [Class] an exception to be raised when macro
+    #   lookup fails, defaults to **Puppet::Error**
+    # @return the value of macro (result of evaluation)
+    def call_macro(scope, name, args, options = {}, env = default_environment)
+      validate_name(name, options[:a_err] || ArgumentError)
+      macro = get_macro(name, env, options[:l_err] || Puppet::Error)
+      check_macro_arity(macro, args, options[:a_err] || ArgumentError)
+      scope.instance_exec(*args,&macro)
+    end
 
-      macro_name = func_args[0]
+    # Call a macro from parser function.
+    #
+    # This method is dedicated to be called from a parser function. It's used
+    # by `determine` and `invoke`, but may be used by other custom functions as
+    # well. This method checks the arguments and in case of validation error
+    # raises Puppet::ParseError with appropriate message. If there is error
+    # in number of arguments to macro, the exception message will reflect the
+    # number of arguments to function, not the macro.
+    #
+    #
+    # @param scope [Puppet::Parser::Scope] scope of the calling function
+    # @param func_name [Symbol|String] name of the calling function
+    # @param func_args [Array] arguments, as provided to calling function
+    # @param n [Integer] number of extra arguments shifted from function's
+    #   argument list
+    # @param env [Puppet::Node::Environment] environment
+    # @return the value of macro (result of evaluation)
+    def call_macro_from_func(scope, func_name, func_args, n = 0, env = default_environment)
       begin
-        validate_name(macro_name)
-      rescue ArgumentError => err
-        raise Puppet::ParseError, "#{err.message}"
+        if(func_args.size == 0)
+          raise Puppet::ParseError, "Wrong number of arguments (0) - missing macro name"
+        end
+        options = { :a_err => Puppet::ParseError, :l_err => Puppet::ParseError }
+        call_macro(scope, func_args[0], func_args[1..-1], options, env)
+      rescue Puppet::ParseError => err
+        msg = fix_error_msg(func_name, err.message, 1+n)
+        raise Puppet::ParseError, msg, err.backtrace
       end
-
-      unless macro = self.macro(macro_name,env)
-        raise Puppet::ParseError, "Undefined macro #{macro_name}"
-      end
-
-      macro_args = func_args[1..-1]
-      check_macro_arity(macro,macro_args)
-      scope.instance_exec(*macro_args,&macro)
     end
   end
 end

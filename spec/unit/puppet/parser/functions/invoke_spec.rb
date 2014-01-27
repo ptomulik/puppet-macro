@@ -14,18 +14,18 @@ describe "invoke function" do
     args_str = "#{args.map{|x| x.intern}.join(', ')}"
     context "invoke(#{args_str})" do
       let(:args_str) { args_str }
-      before { Puppet::Parser::Macros.stubs(:call_macro).once.with(scope,args).returns :ok }
-      it "should == Puppet::Parser::Macros.call_macro(scope,#{args_str})" do
+      before { Puppet::Parser::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,args).returns :ok }
+      it "should == Puppet::Parser::Macros.call_macro_from_func(scope,:invoke,#{args_str})" do
         scope.function_invoke(args).should be :ok
       end
     end
   end
-  context "when Puppet::Parser::Macros.call_macro raises Puppet::ParseError" do
+  context "when Puppet::Parser::Macros.call_macro_from_func raises Puppet::ParseError with message 'blah blah'" do
     context "invoke(['foo'])" do
       let(:msg) { 'blah blah' }
       it do
-        Puppet::Parser::Macros.stubs(:call_macro).once.with(scope,['foo']).raises Puppet::ParseError, msg
-        expect { scope.function_invoke(['foo']) }.to raise_error Puppet::ParseError, "invoke(): #{msg}"
+        Puppet::Parser::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,['foo']).raises Puppet::ParseError, msg
+        expect { scope.function_invoke(['foo']) }.to raise_error Puppet::ParseError, msg
       end
     end
   end
