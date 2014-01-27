@@ -1,4 +1,5 @@
 2014-01-27 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * release 0.0.15
   * added call_macro to scope and fixed lambda binding issues
   * release 0.0.14
   * revised example 6
