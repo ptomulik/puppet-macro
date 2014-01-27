@@ -1,4 +1,5 @@
-$LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__),'..','..','..')))
+dir = File.expand_path(File.join(File.dirname(__FILE__),'..','..','..'))
+$LOAD_PATH.unshift(dir) unless $LOAD_PATH.include?(dir)
 require 'puppet/parser/macros'
 module Puppet::Parser::Functions
   newfunction(:determine, :type => :rvalue, :doc => <<-EOT
