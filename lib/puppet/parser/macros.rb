@@ -1,6 +1,17 @@
 require 'puppet'
 require 'puppet/util/autoload'
 
+# Monkey patches to Scope, so we have convenient access to some methods from
+# macros.
+class Puppet::Parser::Scope
+  # FIXME: I believe I should use environment that is bound to scope, not the
+  # Macros.default_environment, but at the moment I have no idea where to find
+  # it
+  def call_macro(name, args, options = {}, env = Puppet::Parser::Macros.default_environment)
+    Puppet::Parser::Macros.call_macro(self,name,args,options,env)
+  end
+end
+
 module Puppet::Parser::Macros; end
 
 # Utility module for {Puppet::Parser::Macros}
@@ -87,13 +98,14 @@ end
 module Puppet::Parser::Macros::ToLambda
   def to_lambda(block)
     if Puppet::Util::Package.versioncmp(RUBY_VERSION,"1.9") >=0 
-      # This code is taken from: https://github.com/schneems/proc_to_lambda
-      if RUBY_ENGINE && RUBY_ENGINE == "jruby"
-        lambda(&block)
-      else
-        obj = Object.new
-        obj.define_singleton_method(:_, &block)
-        obj.method(:_).to_proc
+      unless block.lambda?
+        # This code is based on: https://github.com/schneems/proc_to_lambda
+        # See also https://github.com/schneems/proc_to_lambda/issues/1
+        if RUBY_ENGINE && RUBY_ENGINE == "jruby"
+          lambda(&block)
+        else
+          Object.new.define_singleton_method(:_, &block).to_proc
+        end
       end
     else
       block
@@ -327,4 +339,3 @@ module Puppet::Parser::Macros
     end
   end
 end
-

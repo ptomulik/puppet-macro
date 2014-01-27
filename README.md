@@ -178,7 +178,7 @@ You may invoke macro using `call_macro` method:
 ```ruby
 # lib/puppet/parser/macros/bar.rb
 Puppet::Parser::Macros.newmacro 'bar' do
-  Puppet::Parser::Macros.call_macro(self,'foo::bar',[])
+  call_macro('foo::bar',[])
 end
 ```
 
