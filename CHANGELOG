@@ -1,4 +1,5 @@
 2014-01-27 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * removed workaround for travis bug
   * refactoring
 2014-01-26 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
   * release 0.0.6
