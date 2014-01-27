@@ -247,7 +247,7 @@ end
 ```
 
 Then, if we split `testmodule::foo` into actual implementation (let say
-`testmodule::foo_impl`) and a wrapper (let's call it simply `testmodule::foo`),
+`testmodule::impl::foo`) and a wrapper (let's call it simply `testmodule::foo`),
 the job may be finished as follows:
 
 ```puppet
