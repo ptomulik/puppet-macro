@@ -122,10 +122,18 @@ describe Puppet::Parser::Macros do
       it { described_class.macro_arities_by_arity(macro).should == [1,:inf] }
     end
     if Puppet::Util::Package.versioncmp(RUBY_VERSION,'1.9') >= 0
-      # This actually shows how 'arity' fails for default parameters
-      context 'macro_arities_by_arity(lambda{|x,y=nil|})' do
-        let(:macro) { Kernel.eval('lambda{|x,y=nil|}')} # must eval, otherwise it would break compilation on 1.8
-        it { described_class.macro_arities_by_arity(macro).should == [1,1] }
+      # This actually shows how 'arity' fails for default parameters on
+      # different ruby versions
+      if Puppet::Util::Package.versioncmp(RUBY_VERSION,'2.0') < 0
+        context 'macro_arities_by_arity(lambda{|x,y=nil|})' do
+          let(:macro) { Kernel.eval('lambda{|x,y=nil|}')} # must eval, otherwise it would break compilation on 1.8
+          it { described_class.macro_arities_by_arity(macro).should == [1,1] }
+        end
+      else
+        context 'macro_arities_by_arity(lambda{|x,y=nil|})' do
+          let(:macro) { Kernel.eval('lambda{|x,y=nil|}')} # must eval, otherwise it would break compilation on 1.8
+          it { described_class.macro_arities_by_arity(macro).should == [1,:inf] }
+        end
       end
       context 'macro_arities_by_arity(lambda{|x,*y,z|})' do
         let(:macro) { Kernel.eval('lambda{|x,*y,z|}') } # must eval, otherwise it would break compilation on 1.8
