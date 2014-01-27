@@ -83,7 +83,7 @@ describe Puppet::Parser::Macros do
 
   describe 'newmacro' do
     let(:hash) { Hash.new }
-    let(:block) { Proc.new {} }
+    let(:block) { Proc.new { :yes_its_me } }
     context 'when macro "foo" does not exist' do
       before do
         Puppet.expects(:debug).never
@@ -95,10 +95,10 @@ describe Puppet::Parser::Macros do
           described_class.stubs(:macro).once.with("foo",:env0,false).returns nil
           described_class.expects(:macros).with(:env0).returns hash
         end
-        it 'should assign macros(:env0)["foo"] = block' do
+        it 'should assign block macros(:env0)["foo"]' do
           hash["foo"].should be_nil
           described_class.newmacro("foo",&block)
-          hash["foo"].should be block
+          hash["foo"].call.should be :yes_its_me
         end
       end
       context 'newmacro("foo",{:environment => :env1}) {}' do
@@ -107,10 +107,15 @@ describe Puppet::Parser::Macros do
           described_class.stubs(:macro).once.with("foo",:env1,false).returns nil
           described_class.expects(:macros).with(:env1).returns hash
         end
-        it 'should assign macros(:env1)["foo"] = block' do
+        if Puppet::Util::Package.versioncmp(RUBY_VERSION,"1.9") >= 0
+          it 'should convert procs to lambdas' do
+            described_class.newmacro("foo",{:environment => :env1},&block).lambda?.should be_true
+          end
+        end
+        it 'should assign block macros(:env1)["foo"]' do
           hash["foo"].should be_nil
           described_class.newmacro("foo",{:environment => :env1},&block)
-          hash["foo"].should be block
+          hash["foo"].call.should be :yes_its_me
         end
       end
     end
@@ -122,10 +127,10 @@ describe Puppet::Parser::Macros do
           described_class.stubs(:macro).once.with("foo",:env0,false).returns Proc.new{|x|}
           described_class.expects(:macros).with(:env0).returns hash
         end
-        it 'should assign macros(:env1)["foo"] = block' do
+        it 'should assign block to macros(:env1)["foo"]' do
           hash["foo"].should be_nil
           described_class.newmacro("foo",&block)
-          hash["foo"].should be block
+          hash["foo"].call.should be :yes_its_me
         end
       end
     end
@@ -355,7 +360,7 @@ describe Puppet::Parser::Macros do
     context 'call_macro(scope,["foo::bar"])' do
       before { described_class.expects(:validate_name).once.with("foo::bar",ArgumentError) }
       context 'when "foo::bar" is a defined macro' do
-        let(:macro) { Proc.new {|| :ok1} }
+        let(:macro) { lambda {|| :ok1} }
         before { described_class.stubs(:macro).with("foo::bar",:env0).returns macro }
         it { described_class.call_macro(scope,"foo::bar",[]).should be :ok1 }
       end
@@ -365,8 +370,8 @@ describe Puppet::Parser::Macros do
       end
     end
 
-    context 'with macro upcase being Proc.new {|x| x.upcase}' do
-      let(:macro) { Proc.new {|x| x.upcase} }
+    context 'with macro upcase = lambda{|x| x.upcase}' do
+      let(:macro) { lambda {|x| x.upcase} }
       before { described_class.stubs(:macro).with("upcase",:env0).returns macro }
       context 'call_macro(scope,"upcase",[])' do
         it { expect { described_class.call_macro(scope,"upcase",[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for 1)" }
@@ -379,8 +384,8 @@ describe Puppet::Parser::Macros do
       end
     end
 
-    context 'with macro upcase being Proc.new {|x,*y| x.upcase}' do
-      let(:macro) { Proc.new {|x,*y| x.upcase} }
+    context 'with macro upcase = lambda {|x,*y| x.upcase}' do
+      let(:macro) { lambda {|x,*y| x.upcase} }
       before { described_class.stubs(:macro).with("upcase",:env0).returns macro }
       context 'call_macro(scope,"upcase",[])' do
         it { expect { described_class.call_macro(scope,"upcase",[]) }.to raise_error ArgumentError, "Wrong number of arguments (0 for minimum 1)" }

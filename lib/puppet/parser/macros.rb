@@ -48,15 +48,13 @@ module Puppet::Parser::Macros::Validation
   # @api private
   def macro_arities_by_parameters(macro)
     arg_kinds = macro.parameters.map{|kind,name| kind}
-    min_arity = arg_kinds.count(:req)
-    max_arity = arg_kinds.include?(:rest) ? :inf : arg_kinds.size
-    [min_arity, max_arity]
+    [arg_kinds.count(:req), arg_kinds.include?(:rest) ? :inf : arg_kinds.size]
   end
 
   # @api private
   def macro_arities_by_arity(macro)
     arity = macro.arity
-    min_arity, max_arity = (arity>=0) ? [arity, arity] : [arity.abs-1, :inf]
+    (arity>=0) ? [arity, arity] : [arity.abs-1, :inf]
   end
 
   # @api private
@@ -86,6 +84,23 @@ module Puppet::Parser::Macros::Validation
   end
 end
 
+module Puppet::Parser::Macros::ToLambda
+  def to_lambda(block)
+    if Puppet::Util::Package.versioncmp(RUBY_VERSION,"1.9") >=0 
+      # This code is taken from: https://github.com/schneems/proc_to_lambda
+      if RUBY_ENGINE && RUBY_ENGINE == "jruby"
+        lambda(&block)
+      else
+        obj = Object.new
+        obj.define_singleton_method(:_, &block)
+        obj.method(:_).to_proc
+      end
+    else
+      block
+    end
+  end
+end
+
 module Puppet::Parser::Macros
   # This object keeps track of macros defined within a single puppet
   # environment. Existing hashes (macros for existing environments) may be
@@ -96,6 +111,7 @@ module Puppet::Parser::Macros
   class << self
     include DefaultEnvironment
     include Validation
+    include ToLambda
 
     MACRO_NAME_RE =  /^[a-z_][a-z0-9_]*(?:::[a-z_][a-z0-9_]*)*$/
 
@@ -150,7 +166,7 @@ module Puppet::Parser::Macros
       env = options[:environment] || default_environment
       Puppet.debug "overwritting macro #{name}" if macro(name,env,false)
       validate_name(name)
-      macros(env)[name] = block
+      macros(env)[name] = to_lambda(block)
     end
 
     # Get a hash of registered macros.
