@@ -7,7 +7,7 @@ class Puppet::Parser::Scope
   # FIXME: I believe I should use environment that is bound to scope, not the
   # Macros.default_environment, but at the moment I have no idea where to find
   # it
-  def call_macro(name, args, options = {}, env = Puppet::Parser::Macros.default_environment)
+  def call_macro(name, args = [], options = {}, env = Puppet::Parser::Macros.default_environment)
     Puppet::Parser::Macros.call_macro(self,name,args,options,env)
   end
 end

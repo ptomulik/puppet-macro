@@ -178,13 +178,12 @@ You may invoke macro using `call_macro` method:
 ```ruby
 # lib/puppet/parser/macros/bar.rb
 Puppet::Parser::Macros.newmacro 'bar' do
-  call_macro('foo::bar',[])
+  call_macro('foo::bar')
 end
 ```
 
-The first argument to `call_macro` is the scope from which the macro is
-invoked, second is the name of the macro to be invoked, third is an array of
-arguments to be passed to macro.
+The first argument to `call_macro` is the name of the macro to be invoked, the
+second (if present) is an array of arguments to be passed to macro.
 
 You may alternatively use function interface, but this isn't the recommended
 way (you may receive misleading exception messages in case you mess up with

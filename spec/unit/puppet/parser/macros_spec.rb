@@ -628,7 +628,15 @@ end
 
 describe Puppet::Parser::Scope do
   it { should respond_to :call_macro }
+  let(:subject) { PuppetlabsSpec::PuppetInternals.scope }
   describe 'call_macro' do
+    context 'call_macro("foo")' do
+      before { Puppet::Parser::Macros.stubs(:default_environment).once.with().returns :env0 }
+      it 'should == Macros.call_macro(self,"foo",[],{},Macros.default_environment)' do
+        Puppet::Parser::Macros.expects(:call_macro).once.with(subject,"foo",[],{},:env0).returns :ok
+        subject.call_macro("foo")
+      end
+    end
     context 'call_macro("foo", [])' do
       before { Puppet::Parser::Macros.stubs(:default_environment).once.with().returns :env0 }
       it 'should == Macros.call_macro(self,"foo",[],{},Macros.default_environment)' do
