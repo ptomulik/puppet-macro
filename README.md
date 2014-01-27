@@ -231,15 +231,15 @@ defined type `testmodule::foo` with two parameters `$a` and `$b` and we want
 
 ```ruby
 # lib/puppet/parser/macros/testmodule/foo/a.rb
-Puppet::Parser::Macros.newmacro 'foo::a', &lambda {|a|
-  (a.empty? or a.equal?(:undef)) ? 'default a' : a
+Puppet::Parser::Macros.newmacro 'testmodule::foo::a', &lambda { |a|
+    (not a or a.equal?(:undef) or a.empty?) ? 'default a' : a
 }
 ```
 
 ```ruby
 # lib/puppet/parser/macros/testmodule/foo/b.rb
-Puppet::Parser::Macros.newmacro 'foo::b', &lambda { |b, a|
-  (b.empty? or b.equal?(:undef)) ? "default b for a=#{a.inspect}" : b
+Puppet::Parser::Macros.newmacro 'testmodule::foo::b', &lambda { |b, a|
+    (not b or b.equal?(:undef) or b.empty?) ? "default b for a=#{a.inspect}" : b
 }
 ```
 

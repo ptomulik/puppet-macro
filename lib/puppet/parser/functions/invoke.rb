@@ -7,7 +7,7 @@ module Puppet::Parser::Functions
   This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
   method. The function takes macro name as first argument and macro parameters
   as the rest of arguments. The number of arguments provided by user is
-  validated against the macro's arity.
+  validated against macro's arity.
 
   *Example*:
 
