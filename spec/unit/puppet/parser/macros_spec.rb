@@ -628,6 +628,7 @@ end
 
 describe Puppet::Parser::Scope do
   it { should respond_to :call_macro }
+  it { should respond_to :pp2r }
   let(:subject) { PuppetlabsSpec::PuppetInternals.scope }
   describe 'call_macro' do
     context 'call_macro("foo")' do
@@ -649,6 +650,23 @@ describe Puppet::Parser::Scope do
       it 'should == Macros.call_macro(self,"foo",[],:opts,:env1)' do
         Puppet::Parser::Macros.expects(:call_macro).once.with(subject,"foo",[],:opts,:env1).returns :ok
         subject.call_macro("foo",[],:opts,:env1)
+      end
+    end
+    describe 'pp2r' do
+      context 'pp2r(:foo)' do
+        it { subject.pp2r(:foo).should be :foo }
+      end
+      context 'pp2r("foo")' do
+        it { subject.pp2r("foo").should == "foo" }
+      end
+      context 'pp2r(nil)' do
+        it { subject.pp2r(nil).should be_nil }
+      end
+      context 'pp2r("")' do
+        it { subject.pp2r("").should be_nil }
+      end
+      context 'pp2r(:undef)' do
+        it { subject.pp2r(:undef).should be_nil }
       end
     end
   end

@@ -4,11 +4,28 @@ require 'puppet/util/autoload'
 # Monkey patches to Scope, so we have convenient access to some methods from
 # macros.
 class Puppet::Parser::Scope
-  # FIXME: I believe I should use environment that is bound to scope, not the
-  # Macros.default_environment, but at the moment I have no idea where to find
-  # it
+  # Call macro registered with {Puppet::Parser::Macros.newmacro}
+  #
+  # @param name [String] macro name, e.g. `'foo::bar'`,
+  # @param args [Array] arguments to be provided to the macro,
+  # @param options [Hash] additional options, see {Puppet::Parser::Macros.call_macro}
+  # @param env [Puppet::Node::Environment] puppet environment,
+  # @return the result of macro evaluation
   def call_macro(name, args = [], options = {}, env = Puppet::Parser::Macros.default_environment)
+    # FIXME: I believe I should use environment that is bound to scope, not the
+    # Macros.default_environment, but at the moment I have no idea where to
+    # find it
     Puppet::Parser::Macros.call_macro(self,name,args,options,env)
+  end
+
+  # Convert puppet value to ruby.
+  #
+  # This converts empty strings and :undefs to nil.
+  #
+  # @param v [String|Symbol] value to be converted
+  # @return converted value
+  def pp2r(v)
+    (v.equal?(:undef) or v == '') ? nil : v
   end
 end
 
