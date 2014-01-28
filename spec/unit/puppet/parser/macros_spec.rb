@@ -603,29 +603,6 @@ describe Puppet::Parser::Macros do
   end
 end
 
-
-require 'spec_helper_integration'
-# These are actually "integration" tests. It checks, for example, whether the
-# Puppet::Parser::Macros integrates well with puppet environments or
-# Puppet::Util::Autoloader.
-describe Puppet::Parser::Macros  do
-  before { described_class.instance_variable_set(:@macros,nil) }
-  describe 'macros() and autoloader' do
-    context 'macro("testmodule::foo::a",defaul_environment,false)' do
-      it "should not autoload macro" do
-        env = described_class.default_environment
-        described_class.macro("testmodule::foo::a", env, false).should be_nil
-      end
-    end
-    context 'macro("testmodule::foo::a",defaul_environment,true)' do
-      it "should autoload macro from disk" do
-        env = described_class.default_environment
-        described_class.macro("testmodule::foo::a", env, true).should be_instance_of Proc
-      end
-    end
-  end
-end
-
 describe Puppet::Parser::Scope do
   it { should respond_to :call_macro }
   it { should respond_to :pp2r }
@@ -668,6 +645,34 @@ describe Puppet::Parser::Scope do
       context 'pp2r(:undef)' do
         it { subject.pp2r(:undef).should be_nil }
       end
+    end
+  end
+end
+
+require 'spec_helper_integration'
+# These are actually "integration" tests. It checks, for example, whether the
+# Puppet::Parser::Macros integrates well with puppet environments or
+# Puppet::Util::Autoloader.
+describe Puppet::Parser::Macros  do
+  before { described_class.instance_variable_set(:@macros,nil) }
+  describe 'macros() and autoloader' do
+    context 'macro("testmodule::foo::a",defaul_environment,false)' do
+      it "should not autoload macro" do
+        env = described_class.default_environment
+        described_class.macro("testmodule::foo::a", env, false).should be_nil
+      end
+    end
+    context 'macro("testmodule::foo::a",defaul_environment,true)' do
+      it "should autoload macro from disk" do
+        env = described_class.default_environment
+        described_class.macro("testmodule::foo::a", env, true).should be_instance_of Proc
+      end
+    end
+    context 'macro("nonexisteng::macro")' do
+      it { described_class.macro('nonexistent::macro').should be_nil }
+    end
+    context 'macro("testmodule::nomacro")' do
+      it { described_class.macro('nonexistent::macro').should be_nil }
     end
   end
 end

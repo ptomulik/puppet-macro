@@ -232,6 +232,13 @@ module Puppet::Parser::Macros
           def files_to_load
             self.class.files_to_load(File.join(@path,"**"))
           end
+          unless respond_to?(:expand)
+            # Fix for puppet 2.7, which does not have the Autoload.expand
+            # method
+            def expand(name)
+              ::File.join(@path, name.to_s)
+            end
+          end
         end
       end
       @autoloader
