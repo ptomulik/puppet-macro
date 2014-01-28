@@ -1,4 +1,5 @@
 2014-01-28 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * use pp2r() in Example 8
   * release 0.0.18
   * added fr2r method to Scope
   * release 0.0.17
