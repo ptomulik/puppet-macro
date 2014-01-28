@@ -27,6 +27,16 @@ class Puppet::Parser::Scope
   def pp2r(v)
     (v.equal?(:undef) or v == '') ? nil : v
   end
+
+  # Convert value from facter to ruby.
+  #
+  # This converts empty strings and :undefined symbol to nil.
+  #
+  # @param v [String|Symbol] value to be converted
+  # @return converted value
+  def fr2r(v)
+    (v.equal?(:undefined) or v == '') ? nil : v
+  end
 end
 
 module Puppet::Parser::Macros; end

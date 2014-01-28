@@ -646,6 +646,23 @@ describe Puppet::Parser::Scope do
         it { subject.pp2r(:undef).should be_nil }
       end
     end
+    describe 'fr2r' do
+      context 'fr2r(:foo)' do
+        it { subject.fr2r(:foo).should be :foo }
+      end
+      context 'fr2r("foo")' do
+        it { subject.fr2r("foo").should == "foo" }
+      end
+      context 'fr2r(nil)' do
+        it { subject.fr2r(nil).should be_nil }
+      end
+      context 'fr2r("")' do
+        it { subject.fr2r("").should be_nil }
+      end
+      context 'fr2r(:undefined)' do
+        it { subject.fr2r(:undefined).should be_nil }
+      end
+    end
   end
 end
 

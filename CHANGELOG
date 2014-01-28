@@ -1,4 +1,5 @@
 2014-01-28 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * added fr2r method to Scope
   * release 0.0.17
   * fixed bug with missing Autoload.expand() method
   * release 0.0.16
