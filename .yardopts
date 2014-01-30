@@ -1,0 +1,4 @@
+--title 'Puppet Macros'
+--markup-provider=redcarpet
+--markup=markdown
+lib/**/*.rb

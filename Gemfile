@@ -8,6 +8,7 @@ group :development, :test do
     gem 'coveralls', :require => false
     gem 'yard'
     gem 'redcarpet'
+    gem 'github-markup'
   end
 end
 

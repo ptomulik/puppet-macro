@@ -14,6 +14,11 @@ if RUBY_VERSION >= "1.9"
   # Generating API documentation, run with 'rake yard'
   require 'yard'
   YARD::Rake::YardocTask.new do |t|
-    t.options =  ['--title', 'Puppet Macros'] + %w{'-m markdown --no-private lib/**/*.rb}
+    t.options =  [
+      '--title', 'Puppet Macros',
+      '--markup-provider=redcarpet', 
+      '--markup=markdown',
+      'lib/**/*.rb'
+    ] 
   end
 end
