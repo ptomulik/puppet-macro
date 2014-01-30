@@ -1,5 +1,5 @@
-# lib/puppet/parser/macros/apache/conf_dir.rb
-Puppet::Parser::Macros.newmacro 'apache::conf_dir' do
+# lib/puppet/macros/apache/conf_dir.rb
+Puppet::Macros.newmacro 'apache::conf_dir' do
   case os = lookupvar("::osfamily")
   when /FreeBSD/; '/usr/local/etc/apache22'
   when /Debian/; '/usr/etc/apache2'

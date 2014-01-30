@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby -S rspec
 require 'spec_helper'
-require 'puppet/parser/macros'
+require 'puppet/macros'
 require 'puppet/util/package' # versioncmp
 
 describe "invoke function" do
@@ -14,17 +14,17 @@ describe "invoke function" do
     args_str = "#{args.map{|x| x.intern}.join(', ')}"
     context "invoke(#{args_str})" do
       let(:args_str) { args_str }
-      before { Puppet::Parser::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,args).returns :ok }
-      it "should == Puppet::Parser::Macros.call_macro_from_func(scope,:invoke,#{args_str})" do
+      before { Puppet::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,args).returns :ok }
+      it "should == Puppet::Macros.call_macro_from_func(scope,:invoke,#{args_str})" do
         scope.function_invoke(args).should be :ok
       end
     end
   end
-  context "when Puppet::Parser::Macros.call_macro_from_func raises Puppet::ParseError with message 'blah blah'" do
+  context "when Puppet::Macros.call_macro_from_func raises Puppet::ParseError with message 'blah blah'" do
     context "invoke(['foo'])" do
       let(:msg) { 'blah blah' }
       it do
-        Puppet::Parser::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,['foo']).raises Puppet::ParseError, msg
+        Puppet::Macros.stubs(:call_macro_from_func).once.with(scope,:invoke,['foo']).raises Puppet::ParseError, msg
         expect { scope.function_invoke(['foo']) }.to raise_error Puppet::ParseError, msg
       end
     end
@@ -39,16 +39,16 @@ describe "invoke function with macros" do
   let(:function) { Puppet::Parser::Functions.function(:invoke) }
   before do
     function
-    Puppet::Parser::Macros.instance_variable_set(:@macros,nil)
-    Puppet::Parser::Macros.newmacro 'local::a', &Proc.new {|a|
+    Puppet::Macros.instance_variable_set(:@macros,nil)
+    Puppet::Macros.newmacro 'local::a', &Proc.new {|a|
       (not a or a.equal?(:undef) or a.empty?) ? 'default a' : a
     }
-    Puppet::Parser::Macros.newmacro 'local::b', &Proc.new {|b,a|
+    Puppet::Macros.newmacro 'local::b', &Proc.new {|b,a|
       (not b or b.equal?(:undef) or b.empty?) ? "default b for a=#{a.inspect}" : b
     }
-    Puppet::Parser::Macros.newmacro 'local::c', &Proc.new {|b,*rest| }
+    Puppet::Macros.newmacro 'local::c', &Proc.new {|b,*rest| }
   end
-  after { Puppet::Parser::Macros.instance_variable_set(:@macros,nil) }
+  after { Puppet::Macros.instance_variable_set(:@macros,nil) }
 
   context "invoke('local::a')" do
     it { expect { scope.function_invoke(['local::a']) }.to raise_error Puppet::ParseError, "invoke(): Wrong number of arguments (1 for 2)" }

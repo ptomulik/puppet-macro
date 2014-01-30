@@ -48,11 +48,11 @@ The main reason for this module being developed is exemplified in
 ###<a id="example-1-defining-macro-in-ruby-code"></a>Example 1: Defining macro in ruby code
 
 To define a macro named **foo::bar** in a module write a file
-named *lib/puppet/parser/macros/foo/bar.rb*:
+named *lib/puppet/macros/foo/bar.rb*:
 
 ```ruby
-# lib/puppet/parser/macros/foo/bar.rb
-Puppet::Parser::Macros.newmacro 'foo::bar' do ||
+# lib/puppet/macros/foo/bar.rb
+Puppet::Macros.newmacro 'foo::bar' do ||
   'macro foo::bar'
 end
 ```
@@ -87,8 +87,8 @@ invoke('foo::bar')
 Let's define macro `sum2` which adds two integers:
 
 ```ruby
-# lib/puppet/parser/macros/sum2.rb
-Puppet::Parser::Macros.newmacro 'sum2' do |x,y|
+# lib/puppet/macros/sum2.rb
+Puppet::Macros.newmacro 'sum2' do |x,y|
   Integer(x) + Integer(y)
 end
 ```
@@ -108,8 +108,8 @@ Let's redefine macro from [Example 3](#example-3-macro-with-parameters) to
 accept arbitrary number of parameters:
 
 ```ruby
-# lib/puppet/parser/macros/sum.rb
-Puppet::Parser::Macros.newmacro 'sum' do |*args|
+# lib/puppet/macros/sum.rb
+Puppet::Macros.newmacro 'sum' do |*args|
   args.map{|x| Integer(x)}.reduce(0,:+)
 end
 ```
@@ -134,8 +134,8 @@ compatibility with ruby **1.8**, you may define a macro with default parameters
 in the usual way:
 
 ```ruby
-# lib/puppet/parser/macros/puppet/config/content.rb
-Puppet::Parser::Macros.newmacro 'puppet::config::content' do |file='/etc/puppet/puppet.conf'|
+# lib/puppet/macros/puppet/config/content.rb
+Puppet::Macros.newmacro 'puppet::config::content' do |file='/etc/puppet/puppet.conf'|
   File.read(file)
 end
 ```
@@ -159,8 +159,8 @@ caller i.e the [determine](#determine) function, will check the minimum arity,
 so we only check the maximum):
 
 ```ruby
-# lib/puppet/parser/macros/puppet/config/content.rb
-Puppet::Parser::Macros.newmacro 'puppet::config::content' do |*args|
+# lib/puppet/macros/puppet/config/content.rb
+Puppet::Macros.newmacro 'puppet::config::content' do |*args|
   if args.size > 1
     raise Puppet::ParseError, "Wrong number of arguments (#{args.size} for maximum 1)"
   end
@@ -176,8 +176,8 @@ end
 You may invoke macro using `call_macro` method:
 
 ```ruby
-# lib/puppet/parser/macros/bar.rb
-Puppet::Parser::Macros.newmacro 'bar' do
+# lib/puppet/macros/bar.rb
+Puppet::Macros.newmacro 'bar' do
   call_macro('foo::bar')
 end
 ```
@@ -190,8 +190,8 @@ way (you may receive misleading exception messages in case you mess up with
 arguments to macro).
 
 ```ruby
-# lib/puppet/parser/macros/bar.rb
-Puppet::Parser::Macros.newmacro 'bar' do
+# lib/puppet/macros/bar.rb
+Puppet::Macros.newmacro 'bar' do
   function_determine(['foo::bar'])
 end
 ```
@@ -221,8 +221,8 @@ following example determines default location of apache configs for operating
 system running on slave:
 
 ```ruby
-# lib/puppet/parser/macros/apache/conf_dir.rb
-Puppet::Parser::Macros.newmacro 'apache::conf_dir' do
+# lib/puppet/macros/apache/conf_dir.rb
+Puppet::Macros.newmacro 'apache::conf_dir' do
   case os = lookupvar("::osfamily")
   when /FreeBSD/; '/usr/local/etc/apache22'
   when /Debian/; '/usr/etc/apache2'
@@ -249,15 +249,15 @@ defined type `testmodule::foo` with two parameters `$a` and `$b` and we want
 `testmodule::foo::b`, and `testmodule::foo::b` may accept `$a` as an argument:
 
 ```ruby
-# lib/puppet/parser/macros/testmodule/foo/a.rb
-Puppet::Parser::Macros.newmacro 'testmodule::foo::a' do |a|
+# lib/puppet/macros/testmodule/foo/a.rb
+Puppet::Macros.newmacro 'testmodule::foo::a' do |a|
     pp2r(a) ? 'default a' : a
 end
 ```
 
 ```ruby
-# lib/puppet/parser/macros/testmodule/foo/b.rb
-Puppet::Parser::Macros.newmacro 'testmodule::foo::b' do |b, a|
+# lib/puppet/macros/testmodule/foo/b.rb
+Puppet::Macros.newmacro 'testmodule::foo::b' do |b, a|
     pp2r(a) ? "default b for a=#{a.inspect}" : b
 end
 ```
@@ -323,7 +323,7 @@ Notice: other: a='other default a', b='default b for a="other default a"'
 ####<a id="determine"></a>determine
 Determine value of a macro.
 
-This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
+This function ivokes a macro defined with `Puppet::Macros.newmacro`
 method and returns its value. The function takes macro name as first
 argument and macro parameters as the rest of arguments. The number of
 arguments provided by user is validated against macro's arity.
@@ -331,10 +331,10 @@ arguments provided by user is validated against macro's arity.
 *Example*:
 
 Let say, you have defined the following macro in
-*puppet/parser/macros/sum.rb*:
+*puppet/macros/sum.rb*:
 
-    # puppet/parser/macros/sum.rb
-    Puppet::Parser::Macros.newmacro 'sum' do |x,y|
+    # puppet/macros/sum.rb
+    Puppet::Macros.newmacro 'sum' do |x,y|
       Integer(x) + Integer(y)
     end
 
@@ -349,7 +349,7 @@ You may then invoke the macro from puppet as follows:
 ####<a id="invoke"></a>invoke
 Invoke macro as a statement.
 
-This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
+This function ivokes a macro defined with `Puppet::Macros.newmacro`
 method. The function takes macro name as first argument and macro parameters
 as the rest of arguments. The number of arguments provided by user is
 validated against macro's arity.
@@ -357,10 +357,10 @@ validated against macro's arity.
 *Example*:
 
 Let say, you have defined the following macro in
-*puppet/parser/macros/print.rb*:
+*puppet/macros/print.rb*:
 
-    # puppet/parser/macros/pring.rb
-    Puppet::Parser::Macros.newmacro 'print' do |msg|
+    # puppet/macros/pring.rb
+    Puppet::Macros.newmacro 'print' do |msg|
       print msg
     end
 
@@ -382,6 +382,10 @@ bundle exec rake yard
 
 The generated documentation goes to `doc/` directory. Note that this works only
 under ruby >= 1.9.
+
+The API documentation is also available
+[online](http://rdoc.info/github/ptomulik/puppet-macro/).
+
 
 [[Table of Contents](#table-of-contents)]
 

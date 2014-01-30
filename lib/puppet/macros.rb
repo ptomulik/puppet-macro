@@ -4,18 +4,18 @@ require 'puppet/util/autoload'
 # Monkey patches to Scope, so we have convenient access to some methods from
 # macros.
 class Puppet::Parser::Scope
-  # Call macro registered with {Puppet::Parser::Macros.newmacro}
+  # Call macro registered with {Puppet::Macros.newmacro}
   #
   # @param name [String] macro name, e.g. `'foo::bar'`,
   # @param args [Array] arguments to be provided to the macro,
-  # @param options [Hash] additional options, see {Puppet::Parser::Macros.call_macro}
+  # @param options [Hash] additional options, see {Puppet::Macros.call_macro}
   # @param env [Puppet::Node::Environment] puppet environment,
   # @return the result of macro evaluation
-  def call_macro(name, args = [], options = {}, env = Puppet::Parser::Macros.default_environment)
+  def call_macro(name, args = [], options = {}, env = Puppet::Macros.default_environment)
     # FIXME: I believe I should use environment that is bound to scope, not the
     # Macros.default_environment, but at the moment I have no idea where to
     # find it
-    Puppet::Parser::Macros.call_macro(self,name,args,options,env)
+    Puppet::Macros.call_macro(self,name,args,options,env)
   end
 
   # Convert puppet value to ruby.
@@ -39,10 +39,10 @@ class Puppet::Parser::Scope
   end
 end
 
-module Puppet::Parser::Macros; end
+module Puppet::Macros; end
 
-# Utility module for {Puppet::Parser::Macros}
-module Puppet::Parser::Macros::DefaultEnvironment
+# Utility module for {Puppet::Macros}
+module Puppet::Macros::DefaultEnvironment
   # This tries to ensure compatibility with different versions of Puppet
   # @api private
   if Puppet.respond_to?(:lookup)
@@ -70,8 +70,8 @@ module Puppet::Parser::Macros::DefaultEnvironment
   end
 end
 
-# Utility module for {Puppet::Parser::Macros}
-module Puppet::Parser::Macros::Validation
+# Utility module for {Puppet::Macros}
+module Puppet::Macros::Validation
   # Validate name
   #
   # @param name [Object] the name to be validated
@@ -122,7 +122,7 @@ module Puppet::Parser::Macros::Validation
   end
 end
 
-module Puppet::Parser::Macros::ToLambda
+module Puppet::Macros::ToLambda
   def to_lambda(block)
     if Puppet::Util::Package.versioncmp(RUBY_VERSION,"1.9") >=0 
       unless block.lambda?
@@ -140,7 +140,7 @@ module Puppet::Parser::Macros::ToLambda
   end
 end
 
-module Puppet::Parser::Macros
+module Puppet::Macros
   # This object keeps track of macros defined within a single puppet
   # environment. Existing hashes (macros for existing environments) may be
   # retrieved with {macros} method.
@@ -173,7 +173,7 @@ module Puppet::Parser::Macros
     #  Definition:
     #
     #  ```ruby
-    #  # puppet/parser/macros/apache/package.rb
+    #  # puppet/macros/apache/package.rb
     #  Puppet::Parser.Macro.newmacro 'apache::package' do
     #    setcode do
     #      case os = fact(:osfamily)
@@ -233,7 +233,7 @@ module Puppet::Parser::Macros
       unless @autoloader
         # Patched autoloader whith 'loadall' searching recursivelly
         @autoloader = Puppet::Util::Autoload.new(
-          self, "puppet/parser/macros", :wrap => false
+          self, "puppet/macros", :wrap => false
         )
         class << @autoloader
           def loadall
@@ -271,7 +271,7 @@ module Puppet::Parser::Macros
     #
     # @param name [String] name of the macro to be loaded
     # @param path [String] path to macro file, relative to
-    #   **puppet/parser/macros** and without `.rb` suffix,
+    #   **puppet/macros** and without `.rb` suffix,
     # @param env [Puppet::Node::Environment] puppet environment,
     # @return [Macro|nil]
     # @api private

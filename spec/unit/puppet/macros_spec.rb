@@ -1,8 +1,8 @@
 #! /usr/bin/env ruby -S rspec
 require 'spec_helper'
-require 'puppet/parser/macros'
+require 'puppet/macros'
 
-describe Puppet::Parser::Macros do
+describe Puppet::Macros do
   before { described_class.instance_variable_set(:@macros,nil) }
 
   [
@@ -411,7 +411,7 @@ describe Puppet::Parser::Macros do
       before do
         described_class.instance_variable_set(:@autoloader, nil)
         Puppet::Util::Autoload.expects(:new).once.
-          with(described_class,'puppet/parser/macros', :wrap => false).returns autoloader
+          with(described_class,'puppet/macros', :wrap => false).returns autoloader
       end
       it { described_class.autoloader.should be autoloader }
       it { described_class.autoloader.methods.map{|m| m.is_a?(Symbol) ? m : m.intern}.should include :loadall }
@@ -609,23 +609,23 @@ describe Puppet::Parser::Scope do
   let(:subject) { PuppetlabsSpec::PuppetInternals.scope }
   describe 'call_macro' do
     context 'call_macro("foo")' do
-      before { Puppet::Parser::Macros.stubs(:default_environment).once.with().returns :env0 }
+      before { Puppet::Macros.stubs(:default_environment).once.with().returns :env0 }
       it 'should == Macros.call_macro(self,"foo",[],{},Macros.default_environment)' do
-        Puppet::Parser::Macros.expects(:call_macro).once.with(subject,"foo",[],{},:env0).returns :ok
+        Puppet::Macros.expects(:call_macro).once.with(subject,"foo",[],{},:env0).returns :ok
         subject.call_macro("foo")
       end
     end
     context 'call_macro("foo", [])' do
-      before { Puppet::Parser::Macros.stubs(:default_environment).once.with().returns :env0 }
+      before { Puppet::Macros.stubs(:default_environment).once.with().returns :env0 }
       it 'should == Macros.call_macro(self,"foo",[],{},Macros.default_environment)' do
-        Puppet::Parser::Macros.expects(:call_macro).once.with(subject,"foo",[],{},:env0).returns :ok
+        Puppet::Macros.expects(:call_macro).once.with(subject,"foo",[],{},:env0).returns :ok
         subject.call_macro("foo",[])
       end
     end
     context 'call_macro("foo", [],:opts,:env1)' do
-      before { Puppet::Parser::Macros.stubs(:default_environment).never }
+      before { Puppet::Macros.stubs(:default_environment).never }
       it 'should == Macros.call_macro(self,"foo",[],:opts,:env1)' do
-        Puppet::Parser::Macros.expects(:call_macro).once.with(subject,"foo",[],:opts,:env1).returns :ok
+        Puppet::Macros.expects(:call_macro).once.with(subject,"foo",[],:opts,:env1).returns :ok
         subject.call_macro("foo",[],:opts,:env1)
       end
     end
@@ -668,9 +668,9 @@ end
 
 require 'spec_helper_integration'
 # These are actually "integration" tests. It checks, for example, whether the
-# Puppet::Parser::Macros integrates well with puppet environments or
+# Puppet::Macros integrates well with puppet environments or
 # Puppet::Util::Autoloader.
-describe Puppet::Parser::Macros  do
+describe Puppet::Macros  do
   before { described_class.instance_variable_set(:@macros,nil) }
   describe 'macros() and autoloader' do
     context 'macro("testmodule::foo::a",defaul_environment,false)' do

@@ -25,3 +25,7 @@
 
 The generated documentation goes to `doc/` directory. Note that this works only
 under ruby >= 1.9.
+
+### Online API documentation
+
+  http://rdoc.info/github/ptomulik/puppet-macro/

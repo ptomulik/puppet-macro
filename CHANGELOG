@@ -1,3 +1,5 @@
+2014-01-30 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * moved macros from puppet/parser/macros to puppet/macros
 2014-01-28 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
   * use pp2r() in Example 8
   * release 0.0.18

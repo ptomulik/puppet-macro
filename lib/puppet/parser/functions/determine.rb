@@ -1,11 +1,11 @@
 dir = File.expand_path(File.join(File.dirname(__FILE__),'..','..','..'))
 $LOAD_PATH.unshift(dir) unless $LOAD_PATH.include?(dir)
-require 'puppet/parser/macros'
+require 'puppet/macros'
 module Puppet::Parser::Functions
   newfunction(:determine, :type => :rvalue, :doc => <<-EOT
   Determine value of a macro.
 
-  This function ivokes a macro defined with `Puppet::Parser::Macros.newmacro`
+  This function ivokes a macro defined with `Puppet::Macros.newmacro`
   method and returns its value. The function takes macro name as first
   argument and macro parameters as the rest of arguments. The number of
   arguments provided by user is validated against macro's arity.
@@ -13,10 +13,10 @@ module Puppet::Parser::Functions
   *Example*:
 
   Let say, you have defined the following macro in
-  *puppet/parser/macros/sum.rb*:
+  *puppet/macros/sum.rb*:
 
-      # puppet/parser/macros/sum.rb
-      Puppet::Parser::Macros.newmacro 'sum' do |x,y|
+      # puppet/macros/sum.rb
+      Puppet::Macros.newmacro 'sum' do |x,y|
         Integer(x) + Integer(y)
       end
 
@@ -25,6 +25,6 @@ module Puppet::Parser::Functions
       $three = determine('sum',1,2) # -> 3
   EOT
   ) do |args|
-    Puppet::Parser::Macros.call_macro_from_func(self,:determine,args)
+    Puppet::Macros.call_macro_from_func(self,:determine,args)
   end
 end
