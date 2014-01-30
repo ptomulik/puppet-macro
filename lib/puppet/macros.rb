@@ -140,18 +140,17 @@ module Puppet::Macros::ToLambda
   end
 end
 
+# This object keeps track of macros defined within a single puppet
+# environment. Existing hashes (macros for existing environments) may be
+# retrieved with {macros} method.
 module Puppet::Macros
-  # This object keeps track of macros defined within a single puppet
-  # environment. Existing hashes (macros for existing environments) may be
-  # retrieved with {macros} method.
-
-  attr_accessor :environment
 
   class << self
     include DefaultEnvironment
     include Validation
     include ToLambda
 
+    # Regular expession used to validate macro names.
     MACRO_NAME_RE =  /^[a-z_][a-z0-9_]*(?:::[a-z_][a-z0-9_]*)*$/
 
     # Check whether **name** is a valid macro name.

@@ -1,4 +1,5 @@
 2014-01-30 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * small corrections to API docs
   * configured yardoc to use github flawored markup
   * release 0.1.0
   * moved macros from puppet/parser/macros to puppet/macros
