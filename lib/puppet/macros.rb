@@ -241,7 +241,7 @@ module Puppet::Macros
           def files_to_load
             self.class.files_to_load(File.join(@path,"**"))
           end
-          unless respond_to?(:expand)
+          unless instance_methods.include?(:expand) or instance_methods.include?('expand')
             # Fix for puppet 2.7, which does not have the Autoload.expand
             # method
             def expand(name)
