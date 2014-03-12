@@ -1,4 +1,5 @@
 2014-03-12 Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+  * release 0.1.1
   * fix path expansion in spec_helper_integration.rb
   * corrected example 8 in README.md
 2014-01-02 Pawel Tomulik <ptomulik@meil.pw.edu.pl>

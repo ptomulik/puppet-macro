@@ -1,5 +1,5 @@
 name    'ptomulik-macro'
-version '0.1.0'
+version '0.1.1'
 source 'git://github.com/ptomulik/puppet-macro.git'
 author 'ptomulik'
 license 'Apache License, Version 2.0'
