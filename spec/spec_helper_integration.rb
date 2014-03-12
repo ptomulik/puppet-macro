@@ -1,4 +1,8 @@
 require 'spec_helper.rb'
 
-testmod = File.expand_path(File.join(RSpec.configuration.module_path,'testmodule/lib'))
-$LOAD_PATH.unshift(testmod) unless $LOAD_PATH.include?(testmod)
+RSpec.configuration.module_path.split(File::PATH_SEPARATOR).each do |mp|
+  testmod = File.expand_path(File.join(mp,'testmodule','lib'))
+  if testmod =~ /#{Regexp.escape(File.join('spec','fixtures','modules'))}/
+    $LOAD_PATH.unshift(testmod) unless $LOAD_PATH.include?(testmod)
+  end
+end

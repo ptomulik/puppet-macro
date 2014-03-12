@@ -685,7 +685,7 @@ describe Puppet::Macros  do
         described_class.macro("testmodule::foo::a", env, true).should be_instance_of Proc
       end
     end
-    context 'macro("nonexisteng::macro")' do
+    context 'macro("nonexistent::macro")' do
       it { described_class.macro('nonexistent::macro').should be_nil }
     end
     context 'macro("testmodule::nomacro")' do
