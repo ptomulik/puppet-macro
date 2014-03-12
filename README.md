@@ -251,14 +251,14 @@ defined type `testmodule::foo` with two parameters `$a` and `$b` and we want
 ```ruby
 # lib/puppet/macros/testmodule/foo/a.rb
 Puppet::Macros.newmacro 'testmodule::foo::a' do |a|
-    pp2r(a) ? 'default a' : a
+    pp2r(a) ? a : 'default a'
 end
 ```
 
 ```ruby
 # lib/puppet/macros/testmodule/foo/b.rb
 Puppet::Macros.newmacro 'testmodule::foo::b' do |b, a|
-    pp2r(a) ? "default b for a=#{a.inspect}" : b
+    pp2r(b) ? b : "default b for a=#{a.inspect}"
 end
 ```
 
